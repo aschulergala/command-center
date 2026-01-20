@@ -69,3 +69,35 @@ Please connect wallet and verify your token balances display correctly.
 5. Test sorting options and tab switching
 
 ---
+
+## fungible-tokens-transfer (Iteration 12)
+
+### Test Requirements
+Please test token transfer: complete a transfer, reject one in MetaMask, and try an invalid amount.
+
+### Checklist
+- [ ] Transfer modal opens when clicking Transfer button on TokenCard
+- [ ] Token info displays correctly in modal (name, symbol, balance)
+- [ ] Recipient address validation works (rejects invalid addresses)
+- [ ] Amount validation works (rejects zero, negative, exceeding balance)
+- [ ] MAX button sets amount to full spendable balance
+- [ ] Cannot send to yourself (validation error)
+- [ ] Continue button disabled until form is valid
+- [ ] Confirmation step shows transfer summary
+- [ ] Warning about irreversible action displays
+- [ ] Back button returns to form with values preserved
+- [ ] Confirm Transfer triggers MetaMask signature popup
+- [ ] Approving transaction completes transfer, closes modal, refreshes balances
+- [ ] Rejecting transaction shows error message, keeps modal open
+- [ ] Balance updates after successful transfer
+
+### How to Test
+1. Start the dev server: `npm run dev`
+2. Connect your wallet using the Connect Wallet button
+3. Navigate to the Tokens page
+4. Click "Transfer" on any token with a balance
+5. Test form validation with invalid inputs
+6. Complete a small transfer and verify balance updates
+7. Reject a transfer in MetaMask to verify error handling
+
+---

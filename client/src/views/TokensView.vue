@@ -5,6 +5,7 @@ import EmptyState from '@/components/ui/EmptyState.vue'
 import TokenList from '@/components/tokens/TokenList.vue'
 import AllowanceList from '@/components/tokens/AllowanceList.vue'
 import SortDropdown from '@/components/tokens/SortDropdown.vue'
+import TransferModal from '@/components/tokens/TransferModal.vue'
 import { useFungibleTokens } from '@/composables/useFungibleTokens'
 import type { FungibleTokenDisplay } from '@shared/types/display'
 
@@ -23,6 +24,10 @@ const {
 // Active tab for allowances section
 const showAllowances = ref(false)
 
+// Transfer modal state
+const transferModalOpen = ref(false)
+const selectedTokenForTransfer = ref<FungibleTokenDisplay | null>(null)
+
 // Fetch tokens on mount if connected
 onMounted(async () => {
   if (isConnected.value) {
@@ -30,10 +35,21 @@ onMounted(async () => {
   }
 })
 
-// Handler functions for token actions (will be implemented in future tasks)
+// Handler functions for token actions
 function handleTransfer(token: FungibleTokenDisplay): void {
-  // TODO: Open transfer modal
-  console.log('Transfer token:', token.tokenKey)
+  selectedTokenForTransfer.value = token
+  transferModalOpen.value = true
+}
+
+function handleCloseTransferModal(): void {
+  transferModalOpen.value = false
+  selectedTokenForTransfer.value = null
+}
+
+async function handleTransferSuccess(token: FungibleTokenDisplay): Promise<void> {
+  // Refresh token balances after successful transfer
+  await fetchAll()
+  console.log('Transfer successful for token:', token.tokenKey)
 }
 
 function handleMint(token: FungibleTokenDisplay): void {
@@ -189,5 +205,13 @@ async function handleRefresh(): Promise<void> {
         />
       </div>
     </template>
+
+    <!-- Transfer Modal -->
+    <TransferModal
+      :token="selectedTokenForTransfer"
+      :open="transferModalOpen"
+      @close="handleCloseTransferModal"
+      @success="handleTransferSuccess"
+    />
   </div>
 </template>

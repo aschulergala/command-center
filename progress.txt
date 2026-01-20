@@ -442,3 +442,50 @@
   - BigNumber.comparedTo() can return null, needs handling in sort functions
 ---
 
+## Iteration 12 - fungible-tokens-transfer
+- What was implemented:
+  - Created client/src/lib/schemas/transferSchema.ts with:
+    - isValidGalaChainAddress() - validates client|hex, eth|hex, and 0x prefixed addresses
+    - isValidAmount() - validates positive non-zero numeric amounts
+    - isWithinBalance() - checks amount doesn't exceed balance
+    - createTransferSchema() - zod schema factory with address and amount validation
+    - formatAmount() - formats amounts for display with thousand separators
+  - Created client/src/composables/useTransferToken.ts with:
+    - executeTransfer() - executes token transfer via useGalaChain
+    - buildTokenInstance() - converts FungibleTokenDisplay to TokenInstanceInput
+    - Reactive isLoading, isTransferring, error states
+    - Integration with wallet store for connection status
+  - Created client/src/components/tokens/TransferModal.vue with:
+    - Native <dialog> element with Tailwind styling
+    - VeeValidate + @vee-validate/zod form validation
+    - Token info display with balance
+    - Recipient address input with validation
+    - Amount input with MAX button
+    - Two-step flow: form → confirmation
+    - Confirmation step shows transfer summary and warning
+    - Loading spinner during transfer execution
+    - Error display for failed transfers
+  - Integrated TransferModal into TokensView.vue
+    - Opens when Transfer button clicked on TokenCard
+    - Refreshes token list on successful transfer
+  - Added comprehensive tests (34 schema tests, 10 composable tests, 20 component tests)
+- Files changed:
+  - client/src/lib/schemas/transferSchema.ts (new)
+  - client/src/composables/useTransferToken.ts (new)
+  - client/src/components/tokens/TransferModal.vue (new)
+  - client/src/views/TokensView.vue (updated - integrated TransferModal)
+  - client/__tests__/lib/schemas/transferSchema.spec.ts (new)
+  - client/__tests__/composables/useTransferToken.spec.ts (new)
+  - client/__tests__/components/tokens/TransferModal.spec.ts (new)
+  - manualTestingRequired.txt (updated)
+- GalaChain tools used: None (used existing useGalaChain composable for transfer)
+- Tests: All 224 tests pass (198 client + 26 server)
+- Learnings for future iterations:
+  - VeeValidate form validation in tests is async - forms don't validate immediately
+  - Component tests for VeeValidate forms are complex; test composables separately for business logic
+  - GalaChain addresses use hex characters only (a-f, 0-9) after the prefix
+  - Native <dialog> element works well with showModal()/close() API
+  - Computed validationSchema with toTypedSchema() for reactive schema based on props
+  - Two-step form flow (form → confirmation) improves UX for irreversible actions
+---
+
