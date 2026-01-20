@@ -379,3 +379,66 @@
   - DefineProps with optional boolean creates reactive prop with undefined default
 ---
 
+## Iteration 11 - fungible-tokens-list
+- What was implemented:
+  - Created client/src/stores/tokens.ts Pinia store with:
+    - State: tokens[], allowances[], isLoading, isLoadingAllowances, error, sortBy, lastFetched
+    - Actions: setBalances(), setAllowances(), setLoading(), setError(), setSort(), clearTokens(), getTokenByKey()
+    - Getters: sortedTokens (computed by sortBy), hasTokens, mintableTokens, burnableTokens
+    - Converts raw TokenBalance/TokenAllowance to display-friendly formats
+    - Uses plain variables (not refs) for raw API data to avoid Vue reactivity breaking BigNumber
+  - Created client/src/composables/useFungibleTokens.ts with:
+    - Reactive access to tokens store data
+    - fetchTokens(), fetchAllowances(), fetchAll(), refresh() actions
+    - Auto-fetch on wallet connect, clear on disconnect
+    - Watch for wallet address changes
+  - Created client/src/components/tokens/TokenCard.vue with:
+    - Token icon (image or initials)
+    - Name, symbol, balance display
+    - Authority badges (Mint/Burn) when applicable
+    - Locked/spendable balance breakdown
+    - Mint allowance info
+    - Action buttons: Transfer, Mint (if authorized), Burn (if authorized)
+  - Created client/src/components/tokens/TokenList.vue with:
+    - Responsive grid layout (1/2/3 columns)
+    - Loading skeleton state
+    - Empty state when no tokens
+  - Created client/src/components/tokens/TokenCardSkeleton.vue for loading state
+  - Created client/src/components/tokens/AllowanceList.vue with:
+    - Grouped by type (Mint, Burn, Transfer/Lock/Use)
+    - Shows grantor, remaining quantity, expiration
+    - Color-coded badges per allowance type
+  - Created client/src/components/tokens/SortDropdown.vue with:
+    - Balance high-to-low, low-to-high
+    - Name A-Z, Z-A
+    - Dropdown with transition animations
+  - Updated client/src/views/TokensView.vue with:
+    - Tab switching between Balances and Allowances
+    - Sort dropdown for balances view
+    - Refresh button with loading animation
+    - Error display with retry option
+    - Wallet connection prompt when not connected
+  - Updated shared/types/display.ts to use strings instead of BigNumber
+    - Avoids Vue reactivity issues where BigNumber loses _isBigNumber property
+    - Added *Raw (string) and *Formatted (display) properties
+- Files changed:
+  - client/src/stores/tokens.ts (new)
+  - client/src/composables/useFungibleTokens.ts (new)
+  - client/src/components/tokens/TokenCard.vue (new)
+  - client/src/components/tokens/TokenList.vue (new)
+  - client/src/components/tokens/TokenCardSkeleton.vue (new)
+  - client/src/components/tokens/AllowanceList.vue (new)
+  - client/src/components/tokens/SortDropdown.vue (new)
+  - client/src/views/TokensView.vue (updated)
+  - shared/types/display.ts (updated - strings instead of BigNumber)
+- GalaChain tools used: Inspected @gala-chain/connect TokenBalance and @gala-chain/api TokenAllowance types
+- Tests: All 160 tests pass (134 client + 26 server)
+- Learnings for future iterations:
+  - Vue reactivity wraps objects deeply, breaking BigNumber instances (_isBigNumber property lost)
+  - Solution: Use plain variables for complex SDK types, convert to string/primitives for reactive state
+  - TokenBalance from @gala-chain/connect has different structure than @gala-chain/api
+  - lockedHolds and inUseHolds are arrays of TokenHold with quantity property
+  - AllowanceType enum from @gala-chain/api includes: Mint, Burn, Transfer, Lock, Use (no Unlock)
+  - BigNumber.comparedTo() can return null, needs handling in sort functions
+---
+

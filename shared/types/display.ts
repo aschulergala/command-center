@@ -1,11 +1,13 @@
 // UI display interfaces - shared between backend and frontend
 // These interfaces represent how data is displayed to users
+//
+// Note: We use strings for numeric values to avoid Vue reactivity issues with BigNumber instances.
+// The store converts BigNumber to string when creating display objects.
 
-import { BigNumber } from 'bignumber.js';
 import { AllowanceType } from '@gala-chain/api';
 
 // Re-export imports used in interfaces to ensure they're recognized as used
-export { BigNumber, AllowanceType };
+export { AllowanceType };
 
 /**
  * Display format for a fungible token
@@ -31,20 +33,26 @@ export interface FungibleTokenDisplay {
   image: string;
   /** Number of decimal places */
   decimals: number;
-  /** Total balance owned */
-  balance: BigNumber;
+  /** Total balance owned (raw string) */
+  balanceRaw: string;
   /** Formatted balance string for display */
   balanceFormatted: string;
-  /** Locked balance amount */
-  lockedBalance: BigNumber;
-  /** Spendable balance amount */
-  spendableBalance: BigNumber;
+  /** Locked balance amount (raw string) */
+  lockedBalanceRaw: string;
+  /** Locked balance formatted */
+  lockedBalanceFormatted: string;
+  /** Spendable balance amount (raw string) */
+  spendableBalanceRaw: string;
+  /** Spendable balance formatted */
+  spendableBalanceFormatted: string;
   /** Whether user has mint authority for this token */
   canMint: boolean;
   /** Whether user has burn authority for this token */
   canBurn: boolean;
-  /** Remaining mint allowance if canMint is true */
-  mintAllowance?: BigNumber;
+  /** Remaining mint allowance if canMint is true (raw string) */
+  mintAllowanceRaw?: string;
+  /** Remaining mint allowance formatted */
+  mintAllowanceFormatted?: string;
 }
 
 /**
@@ -61,8 +69,8 @@ export interface NFTDisplay {
   type: string;
   /** Additional key for uniqueness */
   additionalKey: string;
-  /** NFT instance ID */
-  instance: BigNumber;
+  /** NFT instance ID (string representation) */
+  instance: string;
   /** Human-readable token name */
   name: string;
   /** Token symbol */
@@ -107,12 +115,12 @@ export interface CollectionDisplay {
   image: string;
   /** Whether this is an NFT collection (non-fungible) */
   isNonFungible: boolean;
-  /** Maximum supply (0 = unlimited) */
-  maxSupply: BigNumber;
-  /** Current total supply */
-  totalSupply: BigNumber;
-  /** Total burned */
-  totalBurned: BigNumber;
+  /** Maximum supply (0 = unlimited) - string representation */
+  maxSupply: string;
+  /** Current total supply - string representation */
+  totalSupply: string;
+  /** Total burned - string representation */
+  totalBurned: string;
   /** Whether the current user is an authority for this collection */
   isAuthority: boolean;
   /** Number of items owned by current user */
@@ -133,26 +141,26 @@ export interface AllowanceDisplay {
   type: string;
   /** Additional key */
   additionalKey: string;
-  /** Instance ID (for NFT allowances) */
-  instance: BigNumber;
+  /** Instance ID (for NFT allowances) - string representation */
+  instance: string;
   /** Type of allowance (Mint, Burn, Transfer, etc.) */
   allowanceType: AllowanceType;
   /** Who granted the allowance */
   grantedBy: string;
   /** Who received the allowance */
   grantedTo: string;
-  /** Total quantity allowed */
-  quantity: BigNumber;
-  /** Quantity already spent */
-  quantitySpent: BigNumber;
-  /** Remaining quantity */
-  quantityRemaining: BigNumber;
+  /** Total quantity allowed (raw string) */
+  quantityRaw: string;
+  /** Quantity already spent (raw string) */
+  quantitySpentRaw: string;
+  /** Remaining quantity (raw string) */
+  quantityRemainingRaw: string;
   /** Formatted remaining quantity for display */
   quantityRemainingFormatted: string;
-  /** Number of uses allowed */
-  uses: BigNumber;
-  /** Number of uses spent */
-  usesSpent: BigNumber;
+  /** Number of uses allowed (raw string) */
+  usesRaw: string;
+  /** Number of uses spent (raw string) */
+  usesSpentRaw: string;
   /** Expiration timestamp (0 = never) */
   expires: number;
   /** Whether the allowance has expired */

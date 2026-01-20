@@ -507,8 +507,8 @@
         "Add loading skeleton with shimmer effect",
         "Handle empty state when no tokens owned"
       ],
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "Implemented TokensView with TokenList, TokenCard, AllowanceList, SortDropdown components. Created tokens Pinia store and useFungibleTokens composable. Updated shared display types to use strings for balances to avoid Vue reactivity issues with BigNumber.",
       "testing": {
         "automated": [
           "Store test: fetchTokens populates tokens array",
