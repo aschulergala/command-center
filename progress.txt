@@ -33,3 +33,47 @@
 - Tests: TypeScript typecheck passes, NestJS build passes
 ---
 
+## Iteration 2 - vue-client-setup
+- What was implemented:
+  - Initialized Vite + Vue 3 + TypeScript in client/ folder
+  - Installed Vue Router for client-side routing with routes: /tokens, /nfts, /creators, /export
+  - Installed and configured Pinia for state management
+  - Installed and configured Tailwind CSS with GalaChain brand colors
+  - Installed @gala-chain/connect and @gala-chain/api packages
+  - Installed VeeValidate + @vee-validate/zod for form validation
+  - Installed @vueuse/core for Vue composition utilities
+  - Installed axios for HTTP requests to backend API
+  - Configured vite.config.ts: output to ../dist/client, proxy /api to NestJS in dev
+  - Created folder structure: src/views/, src/components/, src/composables/, src/stores/, src/lib/
+  - Configured path alias @ pointing to client/src/
+  - Created placeholder views for all routes
+  - Created style.css with Tailwind directives and custom component classes
+- Files changed:
+  - client/package.json (updated with full dependencies)
+  - client/vite.config.ts (new)
+  - client/tsconfig.json (new)
+  - client/tsconfig.node.json (new)
+  - client/index.html (new)
+  - client/tailwind.config.js (new)
+  - client/postcss.config.js (new)
+  - client/.env (new)
+  - client/src/main.ts (new)
+  - client/src/App.vue (new)
+  - client/src/style.css (new)
+  - client/src/vite-env.d.ts (new)
+  - client/src/router/index.ts (new)
+  - client/src/lib/config.ts (new)
+  - client/src/views/TokensView.vue (new)
+  - client/src/views/NFTsView.vue (new)
+  - client/src/views/CreatorsView.vue (new)
+  - client/src/views/ExportView.vue (new)
+  - package.json (updated test and typecheck scripts)
+- GalaChain tools used: None (Vue setup)
+- Tests: TypeScript compiles without errors, Vite build succeeds
+- Learnings for future iterations:
+  - Tailwind CSS brand colors defined as 'gala' namespace (gala-primary, gala-secondary, etc.)
+  - Custom component classes (btn-primary, card, input) available in style.css
+  - Path alias @ maps to client/src/ for clean imports
+  - Pinia v3 used with Vue 3.5+
+---
+
