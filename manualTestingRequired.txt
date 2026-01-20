@@ -397,3 +397,38 @@ Please test creating a new class within a collection. Verify it appears after cr
 9. Verify the class is created (collection refresh should show updated data)
 
 ---
+
+## creators-mint-from-collection (Iteration 22)
+
+### Test Requirements
+Please test minting from your collection. Verify the minted count updates correctly.
+
+### Checklist
+- [ ] Mint button on CollectionCard opens CollectionMintModal
+- [ ] CollectionMintModal shows collection info and mint allowance
+- [ ] Class selector appears when collection has classes defined
+- [ ] Class selector shows "Default (Collection Level)" option
+- [ ] Selecting a class shows class supply info (minted/max)
+- [ ] Quantity input validates positive integers
+- [ ] Increment/decrement buttons work correctly
+- [ ] MAX button sets quantity to remaining allowance (or remaining supply for class)
+- [ ] Quantity validation respects both mint allowance and class supply limits
+- [ ] Continue button disabled until quantity is valid
+- [ ] Confirmation step shows collection/class, quantity, and recipient
+- [ ] Info notice explains wallet signing and unique instance IDs
+- [ ] Confirm Mint triggers MetaMask signature popup
+- [ ] Approving transaction completes mint, closes modal, refreshes collections
+- [ ] Rejecting transaction shows error message, keeps modal open
+- [ ] Minted count updates in CollectionCard after successful mint
+
+### How to Test
+1. Start the dev server: `npm run dev`
+2. Connect a wallet that has mint authority for at least one collection
+3. Navigate to the Creators page
+4. In My Collections, click "Mint" on any collection
+5. Test quantity controls (increment, decrement, max, manual input)
+6. If collection has classes, test class selector
+7. Complete a mint and verify minted count updates
+8. Reject a mint in MetaMask to verify error handling
+
+---

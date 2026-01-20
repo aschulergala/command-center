@@ -1017,3 +1017,48 @@
   - VeeValidate form step transitions in tests are async - need flushPromises() between steps
   - When changing button from disabled to enabled, update both the component and its tests
 ---
+
+
+## Iteration 22 - creators-mint-from-collection
+- What was implemented:
+  - Created client/src/composables/useCollectionMint.ts with:
+    - executeMintFromCollection() for minting at collection level
+    - executeMintFromClass() for minting from a specific class
+    - buildTokenClassKeyFromCollection() and buildTokenClassKeyFromClass() helpers
+    - getMaxMintableQuantity() and getMaxMintableQuantityForClass() for UI caps
+    - validateMintQuantity() for form validation against allowance and supply
+    - Reactive isMinting, isLoading, error, isConnected, ownerAddress states
+  - Created client/src/components/creators/CollectionMintModal.vue with:
+    - Native <dialog> element with Tailwind styling
+    - Collection info display with image/placeholder and mint allowance
+    - Class selector when collection has classes (optional)
+    - Class supply info display when class selected
+    - Quantity input with increment/decrement/MAX buttons
+    - Two-step flow: form → confirmation
+    - Confirmation shows collection/class, quantity, recipient
+    - Info notice about wallet signing and unique instance IDs
+    - Green theme styling (consistent with other mint modals)
+    - Loading state during mint execution
+  - Updated client/src/views/CreatorsView.vue with:
+    - Import and state for CollectionMintModal
+    - handleMint() now opens CollectionMintModal (was placeholder)
+    - closeMintModal() and handleMintSuccess() handlers
+    - Auto-refresh collections after successful mint
+- Files changed:
+  - client/src/composables/useCollectionMint.ts (new)
+  - client/src/components/creators/CollectionMintModal.vue (new)
+  - client/src/views/CreatorsView.vue (updated)
+  - client/__tests__/composables/useCollectionMint.spec.ts (new - 25 tests)
+  - client/__tests__/components/creators/CollectionMintModal.spec.ts (new - 21 tests)
+  - IMPLEMENTATION_PLAN.json (updated)
+  - manualTestingRequired.txt (updated)
+- GalaChain tools used: None (reused existing useGalaChain.mintToken)
+- Tests: All 879 tests pass (853 client + 26 server)
+- Learnings for future iterations:
+  - Collection-level mint uses collection's additionalKey, class-level uses class's additionalKey
+  - Validation must check both mint allowance AND remaining class supply
+  - HTMLDialogElement.showModal() requires mocking in jsdom tests (beforeAll HTMLDialogElement.prototype.showModal = vi.fn())
+  - Reuse patterns from MintNFTModal.vue for consistent UX across mint modals
+  - Supply validation should prioritize allowance check before supply check (allowance is more restrictive usually)
+  - Class canMintMore flag already computed in store - check it before attempting mint
+---

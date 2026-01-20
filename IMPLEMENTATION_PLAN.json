@@ -915,8 +915,8 @@
         "Show minting progress indicator",
         "Refresh collection stats on success"
       ],
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "Implemented useCollectionMint.ts composable with executeMintFromCollection and executeMintFromClass functions, validation helpers, and max quantity calculations. Created CollectionMintModal.vue with class selector, quantity controls, two-step confirmation flow. Integrated into CreatorsView.vue. All 879 tests pass (853 client + 26 server).",
       "testing": {
         "automated": [
           "Unit test: mint DTO built correctly",

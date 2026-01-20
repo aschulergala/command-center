@@ -11,9 +11,10 @@ import PumpEntry from '@/components/creators/PumpEntry.vue'
 import CollectionList from '@/components/creators/CollectionList.vue'
 import CreateCollectionModal from '@/components/creators/CreateCollectionModal.vue'
 import CreateClassModal from '@/components/creators/CreateClassModal.vue'
+import CollectionMintModal from '@/components/creators/CollectionMintModal.vue'
 import { useWallet } from '@/composables/useWallet'
 import { useCreatorCollections } from '@/composables/useCreatorCollections'
-import type { CreatorCollectionDisplay } from '@/stores/creatorCollections'
+import type { CreatorCollectionDisplay, CreatorClassDisplay } from '@/stores/creatorCollections'
 
 const { connected } = useWallet()
 const {
@@ -33,7 +34,10 @@ const hasFetched = ref(false)
 // Modal states
 const showCreateCollectionModal = ref(false)
 const showCreateClassModal = ref(false)
+const showMintModal = ref(false)
 const selectedCollectionForClass = ref<CreatorCollectionDisplay | null>(null)
+const selectedCollectionForMint = ref<CreatorCollectionDisplay | null>(null)
+const selectedClassForMint = ref<CreatorClassDisplay | null>(null)
 
 // Fetch collections on mount if connected
 onMounted(async () => {
@@ -74,13 +78,36 @@ async function handleCollectionCreated() {
 }
 
 /**
- * Handle mint from collection
+ * Handle mint from collection - opens the mint modal
  */
 function handleMint(collection: CreatorCollectionDisplay) {
-  // Will be implemented in creators-mint-from-collection task
-  console.log('Mint from collection:', collection.collectionKey)
-  // For now, could open the MintNFTModal from NFTs page
-  // or show a message that this feature is coming soon
+  selectedCollectionForMint.value = collection
+  selectedClassForMint.value = null
+  showMintModal.value = true
+}
+
+/**
+ * Close mint modal
+ */
+function closeMintModal() {
+  showMintModal.value = false
+  selectedCollectionForMint.value = null
+  selectedClassForMint.value = null
+}
+
+/**
+ * Handle successful mint
+ */
+async function handleMintSuccess(
+  _collection: CreatorCollectionDisplay,
+  _quantity: number,
+  _classItem?: CreatorClassDisplay
+) {
+  showMintModal.value = false
+  selectedCollectionForMint.value = null
+  selectedClassForMint.value = null
+  // Refresh collections to update minted counts
+  await refresh(true)
 }
 
 /**
@@ -273,6 +300,15 @@ function handleToggleExpand(collectionKey: string) {
         :collection="selectedCollectionForClass"
         @close="closeCreateClassModal"
         @success="handleClassCreated"
+      />
+
+      <!-- Collection Mint Modal -->
+      <CollectionMintModal
+        :open="showMintModal"
+        :collection="selectedCollectionForMint"
+        :selected-class="selectedClassForMint"
+        @close="closeMintModal"
+        @success="handleMintSuccess"
       />
     </template>
   </div>
