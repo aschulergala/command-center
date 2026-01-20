@@ -1,0 +1,45 @@
+{
+  "name": "command-center",
+  "version": "1.0.0",
+  "description": "GalaChain Command Center - Wallet-facing dApp for token operations",
+  "main": "dist/main.js",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "nest start --watch",
+    "dev:client": "cd client && npm run dev",
+    "build": "npm run build:client && npm run build:server",
+    "build:client": "cd client && npm run build",
+    "build:server": "nest build",
+    "start": "node dist/main.js",
+    "start:prod": "NODE_ENV=production node dist/main.js",
+    "test": "npm run test:server",
+    "test:server": "jest",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": ["galachain", "wallet", "tokens", "nft"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@nestjs/cli": "^11.0.16",
+    "@nestjs/common": "^11.1.12",
+    "@nestjs/config": "^4.0.2",
+    "@nestjs/core": "^11.1.12",
+    "@nestjs/platform-express": "^11.1.12",
+    "@nestjs/serve-static": "^5.0.4",
+    "bignumber.js": "^9.3.1",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.3",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.0.9",
+    "concurrently": "^9.2.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "name": "command-center-client",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "echo 'Vue client not yet initialized'",
+    "build": "echo 'Vue client not yet initialized'"
+  }
+}

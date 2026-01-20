@@ -254,7 +254,7 @@
         "Add script: start:prod - runs compiled NestJS (serves everything)",
         "Configure .gitignore for dist/, node_modules/, .env"
       ],
-      "passes": false,
+      "passes": true,
       "notes": "",
       "testing": {
         "automated": ["Build script completes without errors", "Dev script starts both servers"],

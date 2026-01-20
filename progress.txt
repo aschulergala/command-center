@@ -1,0 +1,35 @@
+# GalaChain Command Center - Progress Log
+
+## Learnings Section
+(Patterns discovered, gotchas encountered, useful context for future iterations)
+- NestJS project structure: src/ for backend, client/ for Vue, shared/ for types
+- Use @nestjs/serve-static to serve Vue build from dist/client
+- TypeScript paths configured for @shared/* imports
+- nest-cli.json required for nest build command
+
+---
+
+## Iteration 1 - project-setup
+- What was implemented:
+  - Initialized npm project with package.json
+  - Installed NestJS core dependencies (@nestjs/common, core, platform-express, config, serve-static)
+  - Created src/main.ts with NestJS bootstrap, CORS, validation pipe
+  - Created src/app.module.ts with ConfigModule and ServeStaticModule
+  - Created shared/ folder with types/wallet.ts placeholder
+  - Created client/ folder with placeholder package.json
+  - Created .gitignore for node_modules, dist, .env files
+  - Created nest-cli.json and tsconfig.json
+- Files changed:
+  - package.json (new)
+  - tsconfig.json (new)
+  - nest-cli.json (new)
+  - src/main.ts (new)
+  - src/app.module.ts (new)
+  - shared/index.ts (new)
+  - shared/types/wallet.ts (new)
+  - client/package.json (new)
+  - .gitignore (new)
+- GalaChain tools used: None (basic project setup)
+- Tests: TypeScript typecheck passes, NestJS build passes
+---
+
