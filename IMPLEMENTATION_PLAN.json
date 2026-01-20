@@ -380,8 +380,8 @@
         "Test production build locally: npm run build && npm run start:prod",
         "Document Railway deployment steps in README"
       ],
-      "passes": false,
-      "notes": "Railway auto-detects Node.js, runs npm install, npm run build, npm start",
+      "passes": true,
+      "notes": "Created Procfile, railway.json, README with deployment docs. Fixed nest-cli.json to not delete outDir. Fixed paths to dist/src/main.js. Added SpaFallbackMiddleware for Vue Router SPA routes. All 38 tests pass.",
       "testing": {
         "automated": ["Build completes without errors"],
         "manual": ["Deploy to Railway staging environment and verify app loads"]

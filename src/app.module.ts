@@ -2,9 +2,9 @@ import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
-import { SpaFallbackController } from './spa-fallback.controller';
 import { HealthModule } from './modules/health/health.module';
 import { RequestLoggerMiddleware } from './middleware/request-logger.middleware';
+import { SpaFallbackMiddleware } from './middleware/spa-fallback.middleware';
 import configuration from './config/configuration';
 
 @Module({
@@ -19,8 +19,7 @@ import configuration from './config/configuration';
     }),
     HealthModule,
   ],
-  // SpaFallbackController must be LAST so API routes are resolved first
-  controllers: [SpaFallbackController],
+  controllers: [],
   providers: [],
 })
 export class AppModule implements NestModule {
@@ -29,5 +28,9 @@ export class AppModule implements NestModule {
     if (process.env.NODE_ENV !== 'production') {
       consumer.apply(RequestLoggerMiddleware).forRoutes('*');
     }
+
+    // SPA fallback middleware - serves index.html for non-API, non-file routes
+    // Must be applied AFTER static file serving
+    consumer.apply(SpaFallbackMiddleware).forRoutes('*');
   }
 }

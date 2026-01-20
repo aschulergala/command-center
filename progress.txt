@@ -7,7 +7,8 @@
 - TypeScript paths configured for @shared/* imports
 - nest-cli.json required for nest build command
 - path-to-regexp v8+ syntax: use '/api{/*path}' not '/api/(.*)'
-- Use SpaFallbackController with @Get('*path') for SPA fallback since ServeStaticModule doesn't handle it
+- Use SpaFallbackMiddleware instead of SpaFallbackController for SPA fallback (middleware is more reliable)
+- Check req.originalUrl instead of req.path in middleware for accurate route matching
 - __dirname resolves to src/ in dev and dist/src/ in production - use relative paths accordingly
 - vue-tsc with noUnusedLocals treats type imports as unused when used in interfaces - re-export to fix
 - Use `export type { }` for type-only re-exports with isolatedModules: true
@@ -213,5 +214,34 @@
   - Middleware configured via NestModule.configure() with MiddlewareConsumer
   - Apply middleware conditionally based on NODE_ENV for dev-only features
   - Use @Controller('health') prefix for nested routes under /api/health
+---
+
+## Iteration 7 - railway-deployment
+- What was implemented:
+  - Created Procfile with `web: node dist/src/main.js`
+  - Created railway.json with build/deploy configuration and health check
+  - Created README.md with development setup, scripts, and Railway deployment instructions
+  - Fixed nest-cli.json to use `deleteOutDir: false` so Vue build isn't wiped during NestJS build
+  - Updated package.json paths to use dist/src/main.js (NestJS compiles src/ to dist/src/)
+  - Replaced SpaFallbackController with SpaFallbackMiddleware for reliable SPA routing
+  - Fixed middleware to use req.originalUrl for accurate /api route detection
+- Files changed:
+  - Procfile (new)
+  - railway.json (new)
+  - README.md (new)
+  - nest-cli.json (updated - deleteOutDir: false)
+  - package.json (updated - paths to dist/src/main.js)
+  - src/main.ts (updated - simplified global prefix)
+  - src/app.module.ts (updated - removed SpaFallbackController, added SpaFallbackMiddleware)
+  - src/middleware/spa-fallback.middleware.ts (new)
+  - src/spa-fallback.controller.ts (updated - cleaned up unused imports)
+- GalaChain tools used: None (deployment configuration)
+- Tests: All 38 tests pass (12 client + 26 server)
+- Learnings for future iterations:
+  - NestJS nest build with deleteOutDir: true wipes entire dist folder including Vue build
+  - Set deleteOutDir: false when Vue outputs to dist/client alongside NestJS dist/src
+  - In middleware, use req.originalUrl instead of req.path for accurate route detection
+  - Windows doesn't support NODE_ENV=value prefix - Railway/Linux will set it automatically
+  - Middleware runs BEFORE controllers - order registration carefully
 ---
 
