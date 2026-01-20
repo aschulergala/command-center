@@ -790,3 +790,39 @@
   - Store already computes canBurn from allowances - no need for separate authority composable
   - Two-step confirmation flow (form → confirm) is important for destructive actions
 ---
+
+## Iteration 19 - Creators Page with Pump Interface
+- What was implemented:
+  - Created client/src/components/creators/PumpEntry.vue with:
+    - Prominent gradient-bordered card with animated border effect
+    - Pump icon and "Launch Tokens" badge
+    - Description text explaining bonding curves, custom parameters, one-click deploy
+    - Feature list with checkmarks
+    - CTA button linking to pump.gala.games (external, opens in new tab)
+    - Disabled state for when wallet not connected
+    - Responsive design (stacks vertically on mobile)
+  - Updated client/src/views/CreatorsView.vue with:
+    - Pump Interface section at top (using PumpEntry component)
+    - Visual divider with "NFT Collection Tools" label
+    - NFT Collection Tools section with two cards:
+      - Create Collection card with icon and description (button disabled, future task)
+      - Manage Classes card with icon and description (button disabled, future task)
+    - My Collections section with empty state placeholder
+    - Wallet connection prompt (EmptyState) when not connected
+  - Added comprehensive tests:
+    - client/__tests__/components/creators/PumpEntry.spec.ts (24 tests)
+    - client/__tests__/views/CreatorsView.spec.ts (18 tests)
+- Files changed:
+  - client/src/components/creators/PumpEntry.vue (new)
+  - client/src/views/CreatorsView.vue (updated)
+  - client/__tests__/components/creators/PumpEntry.spec.ts (new)
+  - client/__tests__/views/CreatorsView.spec.ts (new)
+  - IMPLEMENTATION_PLAN.json (updated)
+- GalaChain tools used: None (UI/layout task)
+- Tests: All 637 tests pass (611 client + 26 server)
+- Learnings for future iterations:
+  - Use ref() at module scope for mutable mock data that needs to change between tests
+  - vi.mock must return the mock function directly; can't use vi.mocked().mockReturnValue() with refs
+  - Gradient border effect: use outer container with gradient bg and inner container with solid bg
+  - Animation on gradient: use background-size > 100% and animate background-position
+---

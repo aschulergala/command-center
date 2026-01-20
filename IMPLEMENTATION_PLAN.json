@@ -791,8 +791,8 @@
         "Show wallet connection prompt if not connected",
         "Add visual divider between Pump and Collection tools sections"
       ],
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "Implemented PumpEntry.vue component with gradient styling, animated border, external link to pump.gala.games. Updated CreatorsView.vue with Pump Interface section, visual divider, and NFT Collection Tools section with Create Collection and Manage Classes cards (disabled placeholders for future tasks). Shows wallet connection prompt when disconnected. All 637 tests pass (611 client + 26 server).",
       "testing": {
         "automated": [
           "Component test: Pump CTA links correctly",
