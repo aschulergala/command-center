@@ -1095,11 +1095,14 @@
         "Add email signup for notification when available (optional)",
         "Style as grayed/muted compared to active features"
       ],
-      "passes": false,
-      "notes": "This feature is marked as 'coming soon' in the PRD and is not part of MVP scope",
+      "passes": true,
+      "notes": "Implemented ExportComingSoon.vue component with preview mockup (date range, token type, transaction type filters), planned features list, and optional email notification signup. All styling uses muted gray theme to indicate 'coming soon' status. Integrated into ExportView.vue. All 1201 tests pass (1141 client + 60 server).",
       "testing": {
         "automated": [
           "Component test: Coming Soon message displays",
+          "Component test: Export preview mockup renders",
+          "Component test: Planned features list displays",
+          "Component test: Email signup works",
           "Storybook: ExportComingSoon component"
         ],
         "manual": []
