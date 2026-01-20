@@ -3,6 +3,7 @@ import { RouterView } from 'vue-router'
 import AppNavigation from '@/components/AppNavigation.vue'
 import WalletConnect from '@/components/WalletConnect.vue'
 import ToastContainer from '@/components/ui/ToastContainer.vue'
+import TransactionIndicator from '@/components/ui/TransactionIndicator.vue'
 </script>
 
 <template>
@@ -25,8 +26,9 @@ import ToastContainer from '@/components/ui/ToastContainer.vue'
           <!-- Desktop Navigation -->
           <AppNavigation class="hidden md:flex" />
 
-          <!-- Wallet Connect -->
-          <div class="flex items-center gap-4">
+          <!-- Wallet Connect + Transaction Indicator -->
+          <div class="flex items-center gap-2">
+            <TransactionIndicator />
             <WalletConnect />
             <!-- Mobile Menu Button -->
             <button

@@ -974,8 +974,8 @@
         "Create client/src/components/ui/TransactionIndicator.vue",
         "Show pending transaction count in header (optional)"
       ],
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "Implemented transactions Pinia store (client/src/stores/transactions.ts) with pendingTxs/recentTxs state, addPending/updateStatus/markComplete/markFailed actions, limit of 10 recent transactions. Created TransactionIndicator.vue component with dropdown showing pending/recent transactions, explorer links for completed transactions with hash. Integrated into Layout.vue header. All 1051 tests pass (1025 client + 26 server).",
       "testing": {
         "automated": [
           "Store test: pending transaction lifecycle",

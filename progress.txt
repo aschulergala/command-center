@@ -1062,3 +1062,89 @@
   - Supply validation should prioritize allowance check before supply check (allowance is more restrictive usually)
   - Class canMintMore flag already computed in store - check it before attempting mint
 ---
+
+## Iteration 23 - toast-notifications
+- What was implemented:
+  - Created client/src/stores/toasts.ts Pinia store with:
+    - State: toasts[] with id, type, message, title, duration, dismissible, createdAt
+    - Actions: addToast(), removeToast(), clearAll(), getToastById(), updateToast()
+    - Convenience methods: success(), error(), pending(), info() with appropriate defaults
+    - Getters: activeToasts, hasToasts, toastCount
+    - Default durations: success/info = 5000ms (auto-dismiss), error/pending = 0 (no auto-dismiss)
+    - generateId() creates unique toast IDs
+  - Created client/src/components/ui/Toast.vue with:
+    - Type-based styling: success (green), error (red), pending (blue), info (gray)
+    - Icon per type (checkmark, x, spinner, info)
+    - Auto-dismiss timer using setTimeout (duration > 0)
+    - Dismiss button when dismissible is true
+    - Accessibility: role="alert", aria-live="assertive", aria-atomic="true"
+    - Title + message content with optional title
+  - Created client/src/components/ui/ToastContainer.vue with:
+    - Teleport to body for proper layering
+    - Fixed bottom-right positioning (bottom-4 right-4 z-50)
+    - TransitionGroup with slide-in/out animations from right
+    - Vertical stacking with gap
+  - Created client/src/composables/useToast.ts with:
+    - Convenience methods: success(), error(), pending(), info()
+    - add() for custom toasts with full options
+    - remove(), update(), clearAll() for management
+    - resolveSuccess(), resolveError() for updating pending toasts
+    - transaction() helper for transaction workflows (returns object with success/error/dismiss)
+  - Integrated ToastContainer into Layout.vue for global availability
+- Files changed:
+  - client/src/stores/toasts.ts (new)
+  - client/src/components/ui/Toast.vue (new)
+  - client/src/components/ui/ToastContainer.vue (new)
+  - client/src/composables/useToast.ts (new)
+  - client/src/views/Layout.vue (updated - added ToastContainer)
+  - client/__tests__/stores/toasts.spec.ts (new - 38 tests)
+  - client/__tests__/components/ui/Toast.spec.ts (new - 24 tests)
+  - client/__tests__/components/ui/ToastContainer.spec.ts (new - 8 tests)
+  - client/__tests__/composables/useToast.spec.ts (new - 23 tests)
+  - IMPLEMENTATION_PLAN.json (updated)
+- GalaChain tools used: None (UI/state management task)
+- Tests: All 972 tests pass (946 client + 26 server)
+- Learnings for future iterations:
+  - Vue Teleport to body works well for overlay components like toasts
+  - TransitionGroup with named transitions (toast-enter-from, toast-leave-to) for smooth animations
+  - Use vi.useFakeTimers() and vi.advanceTimersByTime() to test auto-dismiss behavior
+  - Toast updateToast() is useful for changing pending toasts to success/error
+  - transaction() helper pattern: returns object with success()/error()/dismiss() methods
+  - Default non-dismissible for pending toasts prevents accidental dismissal during operations
+---
+
+## Iteration 24 - transaction-status
+- What was implemented:
+  - Created client/src/stores/transactions.ts Pinia store with:
+    - State: pendingTxs[], recentTxs[] (with MAX_RECENT_TRANSACTIONS = 10)
+    - Actions: addPending(), updateStatus(), markComplete(), markFailed(), getPendingById(), getRecentById(), clearRecent(), clearPending(), clearAll()
+    - Getters: hasPendingTxs, pendingCount, hasRecentTxs, recentCount
+    - Integration with toasts store for automatic toast management
+    - Helper functions: getExplorerUrl(), getTransactionTypeLabel(), getTransactionStatusLabel()
+  - Created client/src/components/ui/TransactionIndicator.vue with:
+    - Transaction icon button with pending count badge (animated pulse)
+    - Dropdown showing pending and recent transactions
+    - Pending section with spinner animation and status
+    - Recent section with confirmed/failed status icons
+    - Explorer link for confirmed transactions with hash
+    - Time formatting (Just now, Xm ago, Xh ago)
+    - Clear recent transactions button
+    - Empty state when no transactions
+  - Integrated TransactionIndicator into Layout.vue header (between navigation and WalletConnect)
+- Files changed:
+  - client/src/stores/transactions.ts (new)
+  - client/src/components/ui/TransactionIndicator.vue (new)
+  - client/src/views/Layout.vue (updated - added TransactionIndicator)
+  - client/__tests__/stores/transactions.spec.ts (new - 50 tests)
+  - client/__tests__/components/ui/TransactionIndicator.spec.ts (new - 29 tests)
+  - IMPLEMENTATION_PLAN.json (updated)
+- GalaChain tools used: None (used existing toast system and shared types)
+- Tests: All 1051 tests pass (1025 client + 26 server)
+- Learnings for future iterations:
+  - Transaction store integrates with toasts store for unified notification experience
+  - Use storeToRefs for reactive access to store state in components
+  - TransactionStatus and TransactionType enums already defined in shared/types/display.ts
+  - Recent transactions list capped at 10 with oldest removed first
+  - markComplete/markFailed both move transaction from pending to recent array
+  - Explorer URL pattern: https://explorer.galachain.com/tx/{hash}
+---
