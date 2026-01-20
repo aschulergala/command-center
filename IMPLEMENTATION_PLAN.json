@@ -659,8 +659,8 @@
         "Add loading skeleton grid",
         "Handle empty state when no NFTs owned"
       ],
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "Implemented NFTs Pinia store (client/src/stores/nfts.ts), useNFTs composable, NFT UI components (NFTGrid, NFTCard, NFTCardSkeleton, CollectionFilter, NFTSortDropdown). Updated NFTsView.vue with full implementation. Filter syncs with URL query param. All 457 tests pass (431 client + 26 server).",
       "testing": {
         "automated": [
           "Store test: filteredNFTs getter filters correctly",
@@ -694,8 +694,8 @@
         "Handle failure: display error message inline",
         "Add confirmation step showing NFT details before transfer"
       ],
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "Implemented transferNFTSchema.ts for address validation, useTransferNFT.ts composable for NFT transfer operations, TransferNFTModal.vue with NFT preview and two-step confirmation flow. Integrated into NFTsView.vue. All 504 tests pass (478 client + 26 server).",
       "testing": {
         "automated": [
           "Unit test: TransferTokenDto built with quantity 1",

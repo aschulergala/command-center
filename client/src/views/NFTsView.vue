@@ -1,27 +1,223 @@
 <script setup lang="ts">
+import { onMounted, ref } from 'vue'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
-import { useWallet } from '@/composables/useWallet'
+import NFTGrid from '@/components/nfts/NFTGrid.vue'
+import CollectionFilter from '@/components/nfts/CollectionFilter.vue'
+import NFTSortDropdown from '@/components/nfts/NFTSortDropdown.vue'
+import TransferNFTModal from '@/components/nfts/TransferNFTModal.vue'
+import { useNFTs } from '@/composables/useNFTs'
+import type { NFTDisplay } from '@shared/types/display'
 
-const { connected } = useWallet()
+const {
+  nfts,
+  collections,
+  selectedCollection,
+  isLoading,
+  error,
+  sortBy,
+  isConnected,
+  totalNFTCount,
+  filteredCount,
+  fetchAll,
+  setSort,
+  setCollectionFilter,
+  clearFilter,
+} = useNFTs()
+
+// Transfer modal state
+const transferModalOpen = ref(false)
+const selectedNFTForTransfer = ref<NFTDisplay | null>(null)
+
+// Burn modal state (placeholder for future nft-burn task)
+// These variables will be used when BurnNFTModal is implemented
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _burnModalOpen = ref(false)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _selectedNFTForBurn = ref<NFTDisplay | null>(null)
+
+// Fetch NFTs on mount if connected
+onMounted(async () => {
+  if (isConnected.value) {
+    await fetchAll()
+  }
+})
+
+// Handler functions for NFT actions
+function handleTransfer(nft: NFTDisplay): void {
+  selectedNFTForTransfer.value = nft
+  transferModalOpen.value = true
+}
+
+function handleTransferClose(): void {
+  transferModalOpen.value = false
+  selectedNFTForTransfer.value = null
+}
+
+async function handleTransferSuccess(_nft: NFTDisplay): Promise<void> {
+  // Refresh NFT list after successful transfer
+  await fetchAll()
+}
+
+function handleBurn(nft: NFTDisplay): void {
+  _selectedNFTForBurn.value = nft
+  _burnModalOpen.value = true
+  // Burn modal will be implemented in nft-burn task
+  console.log('Burn NFT:', nft.instanceKey)
+}
+
+async function handleRefresh(): Promise<void> {
+  await fetchAll()
+}
 </script>
 
 <template>
   <div>
+    <!-- Header -->
     <PageHeader
       title="NFTs"
       description="View and manage your NFT collection."
     />
 
-    <!-- Content will be implemented in nft-list task -->
+    <!-- Not Connected State -->
     <EmptyState
-      v-if="!connected"
+      v-if="!isConnected"
       title="Connect Your Wallet"
       description="Connect your wallet to view and manage your NFT collection."
       icon="nfts"
     />
-    <div v-else class="card">
-      <p class="text-gray-500">NFT list will be implemented in a future iteration.</p>
-    </div>
+
+    <!-- Connected Content -->
+    <template v-else>
+      <!-- Error State -->
+      <div
+        v-if="error"
+        class="card bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 mb-6"
+      >
+        <div class="flex items-start gap-3">
+          <svg
+            class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+            />
+          </svg>
+          <div class="flex-1">
+            <h4 class="font-medium text-red-800 dark:text-red-300">
+              Failed to load NFTs
+            </h4>
+            <p class="text-sm text-red-600 dark:text-red-400 mt-1">
+              {{ error }}
+            </p>
+            <button
+              class="text-sm text-red-700 dark:text-red-300 underline hover:no-underline mt-2"
+              @click="handleRefresh"
+            >
+              Try again
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controls Bar -->
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+        <!-- Count Display -->
+        <div class="text-sm text-gray-600 dark:text-gray-400">
+          <span v-if="selectedCollection">
+            Showing {{ filteredCount }} of {{ totalNFTCount }} NFTs
+          </span>
+          <span v-else-if="totalNFTCount > 0">
+            {{ totalNFTCount }} NFTs
+          </span>
+        </div>
+
+        <!-- Filter & Sort Controls -->
+        <div class="flex items-center gap-2">
+          <!-- Collection Filter -->
+          <CollectionFilter
+            v-if="collections.length > 1"
+            :collections="collections"
+            :model-value="selectedCollection"
+            @update:model-value="setCollectionFilter"
+          />
+
+          <!-- Clear Filter Button -->
+          <button
+            v-if="selectedCollection"
+            class="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            title="Clear filter"
+            @click="clearFilter"
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+
+          <!-- Sort Dropdown -->
+          <NFTSortDropdown
+            :model-value="sortBy"
+            @update:model-value="setSort"
+          />
+
+          <!-- Refresh Button -->
+          <button
+            class="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            :class="{ 'animate-spin': isLoading }"
+            :disabled="isLoading"
+            title="Refresh"
+            @click="handleRefresh"
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- NFT Grid -->
+      <NFTGrid
+        :nfts="nfts"
+        :is-loading="isLoading"
+        @transfer="handleTransfer"
+        @burn="handleBurn"
+      />
+    </template>
+
+    <!-- Transfer NFT Modal -->
+    <TransferNFTModal
+      :nft="selectedNFTForTransfer"
+      :open="transferModalOpen"
+      @close="handleTransferClose"
+      @success="handleTransferSuccess"
+    />
+
+    <!-- Burn Modal Placeholder -->
+    <!-- TODO: Implement BurnNFTModal in nft-burn task -->
   </div>
 </template>

@@ -588,3 +588,112 @@
   - Component tests for buttons with async emit handlers may not trigger - test button existence instead
 ---
 
+
+## Iteration 15 - nft-list
+- What was implemented:
+  - Created client/src/stores/nfts.ts Pinia store with:
+    - State: nfts[], collections[], selectedCollection, isLoading, error, sortBy, lastFetched
+    - Actions: setBalances(), setAllowances(), setLoading(), setError(), setSort(), setCollectionFilter(), clearFilter(), clearNFTs(), getNFTByKey()
+    - Getters: filteredNFTs (applies collection filter), sortedNFTs (applies sort), hasNFTs, totalNFTCount, filteredCount
+    - Filters out fungible tokens (instance 0), processes each NFT instance separately
+    - Extracts unique collections from NFT list with owned count
+  - Created client/src/composables/useNFTs.ts with:
+    - Reactive access to NFT store data
+    - fetchNFTs(), fetchAllowances(), fetchAll(), refresh() actions
+    - setCollectionFilter() syncs with URL query param via vue-router
+    - Watch for wallet address changes to auto-refetch
+    - Watch for URL query param changes to sync filter
+  - Created client/src/components/nfts/NFTCard.vue with:
+    - NFT image or placeholder with gradient background
+    - Collection name, NFT name, instance ID (truncated if long)
+    - Status badges: Locked (yellow), In Use (blue), Burn authority (red)
+    - Rarity badge if available
+    - Transfer and Burn action buttons (Transfer disabled when locked/in-use)
+  - Created client/src/components/nfts/NFTCardSkeleton.vue for loading state
+  - Created client/src/components/nfts/NFTGrid.vue with:
+    - Responsive grid (1/2/3/4 columns)
+    - Loading skeleton state
+    - Empty state when no NFTs
+    - Emits transfer/burn events from child cards
+  - Created client/src/components/nfts/CollectionFilter.vue with:
+    - Dropdown with "All Collections" option
+    - Lists collections with owned count
+    - Checkmark on selected collection
+    - Click outside to close
+  - Created client/src/components/nfts/NFTSortDropdown.vue with:
+    - Sort by collection A-Z/Z-A, instance ID low/high, name A-Z/Z-A
+    - Checkmark on selected option
+  - Updated client/src/views/NFTsView.vue with:
+    - Collection filter and sort controls
+    - NFT count display (total and filtered)
+    - Clear filter button
+    - Refresh button with loading animation
+    - Error display with retry option
+    - Wallet connection prompt when not connected
+- Files changed:
+  - client/src/stores/nfts.ts (new)
+  - client/src/composables/useNFTs.ts (new)
+  - client/src/components/nfts/NFTCard.vue (new)
+  - client/src/components/nfts/NFTCardSkeleton.vue (new)
+  - client/src/components/nfts/NFTGrid.vue (new)
+  - client/src/components/nfts/CollectionFilter.vue (new)
+  - client/src/components/nfts/NFTSortDropdown.vue (new)
+  - client/src/views/NFTsView.vue (updated)
+  - client/__tests__/stores/nfts.spec.ts (new - 33 tests)
+  - client/__tests__/components/nfts/NFTCard.spec.ts (new - 16 tests)
+  - client/__tests__/components/nfts/NFTGrid.spec.ts (new - 7 tests)
+  - client/__tests__/components/nfts/CollectionFilter.spec.ts (new - 11 tests)
+  - client/__tests__/components/nfts/NFTSortDropdown.spec.ts (new - 11 tests)
+  - IMPLEMENTATION_PLAN.json (updated)
+  - manualTestingRequired.txt (updated)
+- GalaChain tools used: None (used existing useGalaChain composable)
+- Tests: All 457 tests pass (431 client + 26 server)
+- Learnings for future iterations:
+  - TokenHold uses instanceId (singular) not instanceIds for the specific held instance
+  - Use type casting with (h as { instanceId?: BigNumber }) when SDK types don't match actual runtime data
+  - Collection filter syncs with URL via vue-router watch and push
+  - NFT balances use instanceIds array - iterate to create individual NFT display objects
+  - Filter out fungible tokens by checking if any instanceId is non-zero
+---
+
+## Iteration 16 - NFT Transfer Functionality
+- What was implemented:
+  - Created client/src/lib/schemas/transferNFTSchema.ts with:
+    - Address validation using isValidGalaChainAddress (reused from transferSchema)
+    - createTransferNFTSchema for recipient-only validation (no amount for NFTs)
+    - truncateAddress and truncateInstanceId helper functions
+  - Created client/src/composables/useTransferNFT.ts with:
+    - buildTokenInstance() that uses specific NFT instance ID
+    - executeTransfer() that sends quantity '1' (NFTs are always single)
+    - Validation for locked/in-use NFTs before transfer attempt
+    - Error handling for wallet not connected
+  - Created client/src/components/nfts/TransferNFTModal.vue with:
+    - NFT preview section (image/placeholder, name, collection, instance ID, rarity)
+    - Recipient address input with validation
+    - Two-step flow: form entry → confirmation
+    - Warning about irreversible transfer
+    - Loading state during transfer
+    - Error display inline
+  - Updated client/src/views/NFTsView.vue with:
+    - Import and use of TransferNFTModal
+    - Handler functions for transfer open/close/success
+    - Automatic NFT list refresh after successful transfer
+- Files changed:
+  - client/src/lib/schemas/transferNFTSchema.ts (new)
+  - client/src/composables/useTransferNFT.ts (new)
+  - client/src/components/nfts/TransferNFTModal.vue (new)
+  - client/src/views/NFTsView.vue (updated)
+  - client/__tests__/lib/schemas/transferNFTSchema.spec.ts (new - 19 tests)
+  - client/__tests__/composables/useTransferNFT.spec.ts (new - 10 tests)
+  - client/__tests__/components/nfts/TransferNFTModal.spec.ts (new - 18 tests)
+  - IMPLEMENTATION_PLAN.json (updated)
+  - manualTestingRequired.txt (updated)
+- GalaChain tools used: None (used existing useGalaChain composable and transferToken)
+- Tests: All 504 tests pass (478 client + 26 server)
+- Learnings for future iterations:
+  - NFT transfers always use quantity '1' - different from fungible tokens
+  - NFT transfer schema is simpler: only address validation (no amount)
+  - Reuse isValidGalaChainAddress from transferSchema for consistency
+  - Check canTransfer flag on NFTDisplay before allowing transfer
+  - GalaChain address validation requires hex-only after prefix (a-f, 0-9)
+---
