@@ -186,10 +186,10 @@ onUnmounted(() => {
 <template>
   <dialog
     ref="dialogRef"
-    class="fixed inset-0 m-auto w-full max-w-md bg-white dark:bg-gray-900 rounded-xl shadow-2xl backdrop:bg-black/50 p-0 open:flex open:flex-col"
+    class="fixed inset-0 m-0 w-full h-full max-w-none max-h-none bg-white dark:bg-gray-900 rounded-none shadow-2xl backdrop:bg-black/50 p-0 open:flex open:flex-col sm:inset-auto sm:m-auto sm:w-full sm:max-w-md sm:h-auto sm:max-h-[90vh] sm:rounded-xl"
     @click="handleDialogClick"
   >
-    <div v-if="token" class="flex flex-col max-h-[90vh]">
+    <div v-if="token" class="flex flex-col h-full sm:max-h-[90vh]">
       <!-- Header -->
       <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
         <h2 class="text-lg font-semibold text-gray-900 dark:text-white">

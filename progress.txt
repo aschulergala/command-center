@@ -1148,3 +1148,120 @@
   - markComplete/markFailed both move transaction from pending to recent array
   - Explorer URL pattern: https://explorer.galachain.com/tx/{hash}
 ---
+
+## Iteration 25 - error-handling
+- What was implemented:
+  - Created shared/errors.ts with typed error classes:
+    - AppError base class with code, severity, recoverable, action, details, originalError, timestamp
+    - GalaChainError for chain-specific errors with errorKey and errorPayload
+    - WalletError for wallet connection/signing errors
+    - NetworkError for network/API errors with statusCode
+    - ValidationError for input validation errors with field
+    - ErrorCode enum (1xxx: GalaChain, 2xxx: Wallet, 3xxx: Network, 4xxx: Validation, 9xxx: Unknown)
+    - ErrorSeverity enum (Info, Warning, Error, Critical)
+    - Type guards: isAppError, isGalaChainError, isWalletError, isNetworkError, isValidationError
+    - Helpers: getErrorMessage, getErrorAction, wrapError
+  - Created client/src/lib/errorHandler.ts with:
+    - WALLET_ERROR_PATTERNS for parsing wallet errors (user rejected, locked, not installed, etc.)
+    - NETWORK_ERROR_PATTERNS for parsing network errors (connection, timeout, server error)
+    - GALACHAIN_ERROR_MAP for mapping GalaChain error keys to user-friendly messages
+    - parseWalletError(), parseNetworkError(), parseGalaChainError(), parseError() functions
+    - logError() for development console logging with grouped output
+    - getErrorDisplayInfo() for UI-ready error information
+  - Created client/src/components/ui/ErrorDisplay.vue with:
+    - Severity-based styling (Info: blue, Warning: yellow, Error: red, Critical: red with border-2)
+    - Compact mode option for smaller padding/text
+    - Icons for each severity level
+    - Optional action text or action button
+    - Optional error code display (dev mode)
+    - Dismissible option with dismiss button
+    - Accessibility: role="alert", aria-live="assertive"
+  - Added Vue global error handler in client/src/main.ts:
+    - app.config.errorHandler parses errors and logs in dev mode
+    - Shows toast for critical errors via dynamic import
+    - app.config.warnHandler logs warnings with component trace in dev mode
+  - Updated Jest config to include shared folder tests
+- Files changed:
+  - shared/errors.ts (new)
+  - shared/index.ts (updated - exports errors)
+  - client/src/lib/errorHandler.ts (new)
+  - client/src/components/ui/ErrorDisplay.vue (new)
+  - client/src/main.ts (updated - added error/warn handlers)
+  - jest.config.js (updated - includes shared tests)
+  - shared/__tests__/errors.spec.ts (new - 33 tests)
+  - client/__tests__/lib/errorHandler.spec.ts (new - 42 tests)
+  - client/__tests__/components/ui/ErrorDisplay.spec.ts (new - 27 tests)
+  - IMPLEMENTATION_PLAN.json (updated)
+  - manualTestingRequired.txt (updated)
+- GalaChain tools used: None (error handling infrastructure)
+- Tests: All 1154 tests pass (1094 client + 60 server)
+- Learnings for future iterations:
+  - Use regex patterns array for error matching to support multiple patterns per error type
+  - Order patterns from most specific to most general for correct matching
+  - ErrorSeverity.Warning for validation, ErrorSeverity.Error for most failures
+  - All errors have recoverable flag and optional action suggestion
+  - Dynamic import for toast store in error handler avoids circular dependencies
+  - Use _instance prefix for unused parameters to satisfy TypeScript
+  - getErrorMessage() returns empty string for empty string input, enabling || fallback
+---
+
+## Iteration 26 - responsive-design
+- What was implemented:
+  - Created client/src/components/ui/MobileMenu.vue slide-out drawer:
+    - Teleport to body for proper z-index layering
+    - Slide-in/out transitions from right edge
+    - Backdrop click to close
+    - ESC key to close
+    - Body scroll lock when open (document.body.style.overflow = 'hidden')
+    - Auto-close on route change
+    - Navigation items with icons and descriptions
+    - "Coming Soon" badge on Export item
+    - Touch-target sizes (44px minimum)
+    - Safe-area padding for notched devices
+  - Updated client/src/views/Layout.vue:
+    - Integrated MobileMenu component with open/close state
+    - Updated hamburger button with minimum touch target size (44px)
+    - Added safe-area-layout class for left/right safe area padding
+  - Updated client/src/style.css with responsive utilities:
+    - body overflow-x: hidden to prevent horizontal scroll
+    - Safe area padding for notched devices (env() values)
+    - Minimum touch target sizes on interactive elements (44px)
+    - Input font-size: 16px to prevent iOS zoom on focus
+    - .touch-target utility class
+    - .modal-responsive utility class
+    - .scrollbar-hide utility class
+    - Safe area utility classes (.safe-area-top, .safe-area-bottom, etc.)
+  - Updated all modals to be full-screen on mobile:
+    - TransferModal.vue, MintModal.vue, BurnModal.vue (fungible tokens)
+    - TransferNFTModal.vue, MintNFTModal.vue, BurnNFTModal.vue (NFTs)
+    - CreateCollectionModal.vue, CollectionMintModal.vue (creators)
+    - CreateClassModal.vue (already had good scoped modal styles, updated to be responsive)
+    - Pattern: inset-0 m-0 w-full h-full max-w-none max-h-none rounded-none on mobile
+    - Pattern: sm:inset-auto sm:m-auto sm:w-full sm:max-w-md sm:h-auto sm:max-h-[90vh] sm:rounded-xl on desktop
+- Files changed:
+  - client/src/components/ui/MobileMenu.vue (new)
+  - client/src/views/Layout.vue (updated)
+  - client/src/style.css (updated)
+  - client/src/components/tokens/TransferModal.vue (updated)
+  - client/src/components/tokens/MintModal.vue (updated)
+  - client/src/components/tokens/BurnModal.vue (updated)
+  - client/src/components/nfts/TransferNFTModal.vue (updated)
+  - client/src/components/nfts/MintNFTModal.vue (updated)
+  - client/src/components/nfts/BurnNFTModal.vue (updated)
+  - client/src/components/creators/CreateCollectionModal.vue (updated)
+  - client/src/components/creators/CollectionMintModal.vue (updated)
+  - client/src/components/creators/CreateClassModal.vue (updated)
+  - client/__tests__/components/ui/MobileMenu.spec.ts (new - 23 tests)
+  - IMPLEMENTATION_PLAN.json (updated)
+  - manualTestingRequired.txt (updated)
+- GalaChain tools used: None (UI/responsive design task)
+- Tests: All 1177 tests pass (1117 client + 60 server)
+- Learnings for future iterations:
+  - Vue watcher on props doesn't trigger on initial mount if prop is already set - test with prop transitions
+  - Tailwind sm: breakpoint is 640px - use for modal responsive switching point
+  - Body scroll lock: set document.body.style.overflow = 'hidden' in watcher, clear in watcher and onUnmounted
+  - Safe area insets: use env(safe-area-inset-*) CSS functions
+  - Touch targets: 44px minimum per Apple HIG
+  - Input font-size 16px prevents iOS Safari zoom on focus
+  - Teleport to body ensures proper z-index stacking for overlays
+---

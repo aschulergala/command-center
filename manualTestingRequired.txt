@@ -459,3 +459,33 @@ Please test error scenarios: reject a transaction, disconnect network, and verif
 8. Check browser console for logged errors in development mode
 
 ---
+
+## responsive-design (Iteration 26)
+
+### Test Requirements
+Please test the app on a mobile device: navigation, touch targets, and wallet connection via mobile browser.
+
+### Checklist
+- [ ] Mobile menu opens when tapping hamburger icon
+- [ ] Mobile menu closes when tapping X, backdrop, or selecting an item
+- [ ] Mobile menu shows navigation items with descriptions
+- [ ] Navigation works correctly (routing to each page)
+- [ ] Modals display full-screen on mobile (no rounded corners, full height)
+- [ ] Modals display centered card on desktop (rounded corners, max-width)
+- [ ] Touch targets are at least 44px (buttons, links, inputs)
+- [ ] No horizontal scroll on any page
+- [ ] Forms don't zoom in on iOS when focusing inputs (font-size 16px)
+- [ ] Safe area padding works on notched devices (iPhone X+)
+- [ ] Wallet connection works on mobile browser
+- [ ] NFT grid is responsive (1 col mobile, 2 sm, 3 md, 4 lg)
+- [ ] Token cards stack vertically on mobile
+
+### How to Test
+1. Start the dev server: `npm run dev`
+2. Access the app from a mobile device or use Chrome DevTools mobile emulation
+3. Test the hamburger menu navigation
+4. Open each modal (Transfer, Mint, Burn) and verify full-screen behavior
+5. Test on iPhone X or newer to verify safe area padding
+6. Connect wallet via mobile browser (MetaMask mobile app or browser extension)
+
+---

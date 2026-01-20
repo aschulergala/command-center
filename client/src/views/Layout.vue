@@ -1,13 +1,25 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { RouterView } from 'vue-router'
 import AppNavigation from '@/components/AppNavigation.vue'
 import WalletConnect from '@/components/WalletConnect.vue'
 import ToastContainer from '@/components/ui/ToastContainer.vue'
 import TransactionIndicator from '@/components/ui/TransactionIndicator.vue'
+import MobileMenu from '@/components/ui/MobileMenu.vue'
+
+const isMobileMenuOpen = ref(false)
+
+function openMobileMenu() {
+  isMobileMenuOpen.value = true
+}
+
+function closeMobileMenu() {
+  isMobileMenuOpen.value = false
+}
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="min-h-screen bg-gray-50 safe-area-layout">
     <!-- Header -->
     <header class="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -32,9 +44,9 @@ import TransactionIndicator from '@/components/ui/TransactionIndicator.vue'
             <WalletConnect />
             <!-- Mobile Menu Button -->
             <button
-              class="md:hidden p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg"
+              class="md:hidden p-2 min-h-[44px] min-w-[44px] text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg flex items-center justify-center"
               aria-label="Open menu"
-              @click="$emit('open-mobile-menu')"
+              @click="openMobileMenu"
             >
               <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
@@ -64,5 +76,16 @@ import TransactionIndicator from '@/components/ui/TransactionIndicator.vue'
 
     <!-- Toast Notifications -->
     <ToastContainer />
+
+    <!-- Mobile Menu Drawer -->
+    <MobileMenu :open="isMobileMenuOpen" @close="closeMobileMenu" />
   </div>
 </template>
+
+<style scoped>
+/* Safe area layout for notched devices */
+.safe-area-layout {
+  padding-left: env(safe-area-inset-left, 0);
+  padding-right: env(safe-area-inset-right, 0);
+}
+</style>

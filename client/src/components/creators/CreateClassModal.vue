@@ -412,8 +412,10 @@ async function handleCreate() {
   @apply flex items-center justify-center;
 }
 
+/* Full screen on mobile, centered card on desktop */
 .modal-content {
-  @apply bg-white rounded-xl shadow-xl w-full mx-4;
+  @apply bg-white w-full h-full rounded-none;
+  @apply sm:h-auto sm:max-h-[90vh] sm:rounded-xl sm:shadow-xl sm:mx-4;
 }
 
 .modal-header {
@@ -421,11 +423,12 @@ async function handleCreate() {
 }
 
 .modal-close {
-  @apply p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors;
+  @apply p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors;
 }
 
 .modal-body {
-  @apply p-4 max-h-[60vh] overflow-y-auto;
+  @apply p-4 flex-1 overflow-y-auto;
+  @apply sm:max-h-[60vh];
 }
 
 .modal-footer {
