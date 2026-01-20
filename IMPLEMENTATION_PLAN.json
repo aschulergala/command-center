@@ -1076,8 +1076,8 @@
         "Configure Storybook for visual component documentation",
         "Add Playwright for E2E tests with mock wallet injection"
       ],
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "Created test fixtures (client/__tests__/fixtures/) with mock data for tokens, nfts, collections, and allowances. Created module mocks (client/__tests__/mocks/) for @gala-chain/connect, galachainClient, wallet store, and useGalaChain composable. Configured Storybook for Vue 3 with Tailwind CSS and path aliases, added stories for UI components (LoadingSpinner, EmptyState, Toast, ErrorDisplay, TokenCard). Configured Playwright for E2E tests with mock wallet injection, created navigation and wallet mock tests. All 1177 tests pass (1117 client + 60 server).",
       "testing": {
         "automated": ["All tests pass", "Coverage meets goals"],
         "manual": []

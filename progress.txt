@@ -1265,3 +1265,61 @@
   - Input font-size 16px prevents iOS Safari zoom on focus
   - Teleport to body ensures proper z-index stacking for overlays
 ---
+
+## Iteration 27 - testing
+- What was implemented:
+  - Created client/__tests__/fixtures/ directory with comprehensive mock data:
+    - tokens.ts: Mock TokenBalance objects, FungibleTokenDisplay objects, factory functions
+    - nfts.ts: Mock NFT balances, NFTDisplay objects, CollectionDisplay objects, factory functions
+    - collections.ts: CreatorCollectionDisplay and CreatorClassDisplay interfaces and mocks
+    - allowances.ts: Mock TokenAllowance objects, AllowanceDisplay objects, factory functions
+    - index.ts: Barrel export with common test constants (addresses, user aliases)
+  - Created client/__tests__/mocks/ directory with module mocks:
+    - galachain-connect.ts: MockBrowserConnectClient, MockTokenApi, factory functions
+    - galachain-client.ts: Mock implementations for all client functions with setters
+    - wallet-store.ts: Mock wallet state with setters (connected/disconnected/error)
+    - use-galachain.ts: Mock composable with configurable operation results
+    - index.ts: Barrel export with utility functions (mockDialogElement, mockMatchMedia, etc.)
+  - Configured Storybook for Vue 3 with Vite:
+    - Updated .storybook/main.ts with path aliases (@, @shared)
+    - Updated .storybook/preview.ts with Pinia, Tailwind CSS, dark background
+    - Created stories for UI components: LoadingSpinner, EmptyState, Toast, ErrorDisplay
+    - Created TokenCard.stories.ts for token component documentation
+  - Configured Playwright for E2E tests:
+    - Created playwright.config.ts with Chromium project, dev server config
+    - Created e2e/navigation.spec.ts for navigation tests
+    - Created e2e/wallet-mock.spec.ts with mock wallet injection pattern
+    - Added test:e2e and test:e2e:ui scripts to client/package.json
+- Files changed:
+  - client/__tests__/fixtures/tokens.ts (new)
+  - client/__tests__/fixtures/nfts.ts (new)
+  - client/__tests__/fixtures/collections.ts (new)
+  - client/__tests__/fixtures/allowances.ts (new)
+  - client/__tests__/fixtures/index.ts (new)
+  - client/__tests__/mocks/galachain-connect.ts (new)
+  - client/__tests__/mocks/galachain-client.ts (new)
+  - client/__tests__/mocks/wallet-store.ts (new)
+  - client/__tests__/mocks/use-galachain.ts (new)
+  - client/__tests__/mocks/index.ts (new)
+  - client/.storybook/main.ts (updated)
+  - client/.storybook/preview.ts (updated)
+  - client/src/components/ui/LoadingSpinner.stories.ts (new)
+  - client/src/components/ui/EmptyState.stories.ts (new)
+  - client/src/components/ui/Toast.stories.ts (new)
+  - client/src/components/ui/ErrorDisplay.stories.ts (new)
+  - client/src/components/tokens/TokenCard.stories.ts (new)
+  - client/playwright.config.ts (new)
+  - client/e2e/navigation.spec.ts (new)
+  - client/e2e/wallet-mock.spec.ts (new)
+  - client/package.json (updated - added test:e2e scripts)
+  - IMPLEMENTATION_PLAN.json (updated - testing task passed)
+- GalaChain tools used: None (testing infrastructure)
+- Tests: All 1177 tests pass (1117 client + 60 server)
+- Learnings for future iterations:
+  - Storybook 10.x uses @storybook/vue3-vite for Vue 3 projects
+  - viteFinal config in Storybook allows path alias configuration
+  - Centralized test fixtures prevent duplication across test files
+  - Module mocks with factory functions allow test-specific configuration
+  - Playwright window.__MOCK_WALLET__ pattern allows E2E testing without real wallet
+  - Stories require correct prop types - check component defineProps for actual property names
+---
