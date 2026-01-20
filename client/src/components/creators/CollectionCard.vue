@@ -116,8 +116,6 @@ function formatCollectionKey(key: string): string {
 
           <button
             class="btn-secondary text-sm"
-            disabled
-            title="Coming in creators-manage-classes task"
             @click="emit('manageClasses', collection)"
           >
             <span class="flex items-center gap-1.5">
@@ -132,7 +130,6 @@ function formatCollectionKey(key: string): string {
           <button
             class="ml-auto p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
             :title="collection.isExpanded ? 'Collapse' : 'Expand'"
-            disabled
             @click="emit('toggleExpand', collection.collectionKey)"
           >
             <svg

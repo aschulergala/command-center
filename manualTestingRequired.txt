@@ -357,3 +357,43 @@ Please test creating a new collection. Verify it appears in your collections aft
 9. Verify the collection appears in My Collections after creation
 
 ---
+
+## creators-manage-classes (Iteration 21)
+
+### Test Requirements
+Please test creating a new class within a collection. Verify it appears after creation.
+
+### Checklist
+- [ ] Manage Classes button is enabled on CollectionCard
+- [ ] Clicking Manage Classes opens CreateClassModal
+- [ ] CreateClassModal shows collection name in header
+- [ ] Class Name field validates (letters, numbers, spaces, hyphens, underscores)
+- [ ] Class Identifier field validates (alphanumeric only, no spaces)
+- [ ] Class key preview updates as you type the identifier
+- [ ] Description, Image URL, Max Supply, and Rarity fields are optional
+- [ ] Max Supply validates as positive integer or empty for unlimited
+- [ ] Image URL validates as HTTP/HTTPS URL
+- [ ] Continue button disabled until Name and Identifier are valid
+- [ ] Confirmation step shows class preview with all details
+- [ ] Info notice explains what creating a class does
+- [ ] Confirm Create triggers MetaMask signature popup
+- [ ] Approving transaction creates class and refreshes list
+- [ ] Rejecting transaction shows error message
+- [ ] Expand/collapse button is now enabled on CollectionCard
+- [ ] Manage Classes card in NFT Collection Tools shows guidance text
+
+### How to Test
+1. Start the dev server: `npm run dev`
+2. Connect your wallet using the Connect Wallet button
+3. Navigate to the Creators page
+4. In My Collections, click "Manage Classes" on any collection
+5. Fill in the class creation form:
+   - Class Name: "Legendary Sword"
+   - Class Identifier: "legendarysword"
+   - (Optional) Description, Image URL, Max Supply, Rarity
+6. Verify form validation by testing invalid inputs
+7. Click Continue and review the confirmation
+8. Click Create Class to trigger wallet signing
+9. Verify the class is created (collection refresh should show updated data)
+
+---

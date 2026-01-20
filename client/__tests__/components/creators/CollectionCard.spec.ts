@@ -130,13 +130,27 @@ describe('CollectionCard', () => {
     expect(wrapper.emitted('mint')![0]).toEqual([mockCollection])
   })
 
-  it('should have disabled Manage Classes button', () => {
+  it('should have enabled Manage Classes button', () => {
     const wrapper = mount(CollectionCard, {
       props: { collection: mockCollection },
     })
 
     const manageButton = wrapper.findAll('button').find(btn => btn.text().includes('Manage Classes'))
-    expect(manageButton?.attributes('disabled')).toBeDefined()
+    expect(manageButton).toBeDefined()
+    // Button is now enabled (not disabled)
+    expect(manageButton?.attributes('disabled')).toBeUndefined()
+  })
+
+  it('should emit manageClasses event when Manage Classes button clicked', async () => {
+    const wrapper = mount(CollectionCard, {
+      props: { collection: mockCollection },
+    })
+
+    const manageButton = wrapper.findAll('button').find(btn => btn.text().includes('Manage Classes'))
+    await manageButton?.trigger('click')
+
+    expect(wrapper.emitted('manageClasses')).toBeTruthy()
+    expect(wrapper.emitted('manageClasses')![0]).toEqual([mockCollection])
   })
 
   it('should have expand/collapse button', () => {

@@ -295,7 +295,7 @@ describe('CreatorsView.vue', () => {
       expect(createButton?.attributes('disabled')).toBeUndefined()
     })
 
-    it('has Manage Classes button (disabled)', () => {
+    it('shows Manage Classes guidance text', () => {
       const wrapper = mount(CreatorsView, {
         global: {
           plugins: [createTestingPinia()],
@@ -309,11 +309,8 @@ describe('CreatorsView.vue', () => {
         }
       })
 
-      const buttons = wrapper.findAll('button')
-      const manageButton = buttons.find(b => b.text().includes('Manage'))
-
-      expect(manageButton).toBeDefined()
-      expect(manageButton?.attributes('disabled')).toBeDefined()
+      // The Manage Classes card now shows guidance text instead of a disabled button
+      expect(wrapper.text()).toContain('Select a collection below to manage its classes')
     })
 
     it('does not render wallet connection empty state', () => {

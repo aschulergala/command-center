@@ -10,6 +10,7 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import PumpEntry from '@/components/creators/PumpEntry.vue'
 import CollectionList from '@/components/creators/CollectionList.vue'
 import CreateCollectionModal from '@/components/creators/CreateCollectionModal.vue'
+import CreateClassModal from '@/components/creators/CreateClassModal.vue'
 import { useWallet } from '@/composables/useWallet'
 import { useCreatorCollections } from '@/composables/useCreatorCollections'
 import type { CreatorCollectionDisplay } from '@/stores/creatorCollections'
@@ -31,6 +32,8 @@ const hasFetched = ref(false)
 
 // Modal states
 const showCreateCollectionModal = ref(false)
+const showCreateClassModal = ref(false)
+const selectedCollectionForClass = ref<CreatorCollectionDisplay | null>(null)
 
 // Fetch collections on mount if connected
 onMounted(async () => {
@@ -81,11 +84,29 @@ function handleMint(collection: CreatorCollectionDisplay) {
 }
 
 /**
- * Handle manage classes
+ * Handle manage classes - open the create class modal for this collection
  */
 function handleManageClasses(collection: CreatorCollectionDisplay) {
-  // Will be implemented in creators-manage-classes task
-  console.log('Manage classes for:', collection.collectionKey)
+  selectedCollectionForClass.value = collection
+  showCreateClassModal.value = true
+}
+
+/**
+ * Close create class modal
+ */
+function closeCreateClassModal() {
+  showCreateClassModal.value = false
+  selectedCollectionForClass.value = null
+}
+
+/**
+ * Handle successful class creation
+ */
+async function handleClassCreated() {
+  showCreateClassModal.value = false
+  selectedCollectionForClass.value = null
+  // Refresh collections to show the new class
+  await refresh(true)
 }
 
 /**
@@ -171,19 +192,12 @@ function handleToggleExpand(collectionKey: string) {
                 <p class="text-gray-500 text-sm mb-4">
                   Define token classes within your collections with custom attributes.
                 </p>
-                <button
-                  class="btn-secondary text-sm"
-                  disabled
-                  title="Coming in creators-manage-classes task"
-                >
-                  <span class="flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    Manage
-                  </span>
-                </button>
+                <p class="text-sm text-purple-600">
+                  <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                  Select a collection below to manage its classes
+                </p>
               </div>
             </div>
           </div>
@@ -251,6 +265,14 @@ function handleToggleExpand(collectionKey: string) {
         :open="showCreateCollectionModal"
         @close="closeCreateCollectionModal"
         @success="handleCollectionCreated"
+      />
+
+      <!-- Create Class Modal -->
+      <CreateClassModal
+        :open="showCreateClassModal"
+        :collection="selectedCollectionForClass"
+        @close="closeCreateClassModal"
+        @success="handleClassCreated"
       />
     </template>
   </div>
