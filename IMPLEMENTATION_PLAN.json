@@ -57,8 +57,187 @@
       "autoprefixer",
       "postcss",
       "typescript",
-      "concurrently"
+      "concurrently",
+      "vitest",
+      "@vue/test-utils",
+      "@pinia/testing",
+      "@storybook/vue3",
+      "playwright"
     ]
+  },
+  "testingStrategy": {
+    "overview": "Layered testing approach separating concerns to maximize automated coverage while acknowledging wallet signing requires manual testing",
+    "layers": [
+      {
+        "layer": "Unit Tests (Vitest)",
+        "description": "Pure functions, validation schemas, formatters, utilities",
+        "walletRequired": false,
+        "automatable": true,
+        "examples": [
+          "formatTokenBalance() formatting",
+          "truncateAddress() output",
+          "zod validation schemas",
+          "Error message mapping",
+          "Sorting/filtering logic"
+        ]
+      },
+      {
+        "layer": "Store Tests (Vitest + @pinia/testing)",
+        "description": "Pinia store state management with mocked GalaChain client",
+        "walletRequired": false,
+        "automatable": true,
+        "mockStrategy": "Mock @gala-chain/connect and client at module level",
+        "examples": [
+          "wallet store state transitions",
+          "tokens store fetch/refresh actions",
+          "nfts store filtering getters",
+          "transactions store pending/complete flow"
+        ]
+      },
+      {
+        "layer": "Composable Tests (Vitest)",
+        "description": "Vue composables with mocked stores and client",
+        "walletRequired": false,
+        "automatable": true,
+        "mockStrategy": "Inject mock stores, mock client responses",
+        "examples": [
+          "useTransferToken DTO construction",
+          "useTokenAuthority authorization checks",
+          "useGalaChain error handling"
+        ]
+      },
+      {
+        "layer": "Component Tests (Vitest + @vue/test-utils)",
+        "description": "Vue components with mocked stores via @pinia/testing",
+        "walletRequired": false,
+        "automatable": true,
+        "mockStrategy": "Use createTestingPinia() with initialState",
+        "examples": [
+          "TokenCard renders balance correctly",
+          "TransferModal validates input",
+          "WalletConnect shows correct button states",
+          "MintModal disabled when unauthorized"
+        ]
+      },
+      {
+        "layer": "Visual/Storybook Tests",
+        "description": "Component visual states in isolation",
+        "walletRequired": false,
+        "automatable": true,
+        "purpose": "Document all UI states, catch visual regressions",
+        "stories": [
+          "WalletConnect: disconnected, connecting, connected, error",
+          "TokenCard: with balance, zero balance, with mint auth, with burn auth",
+          "TransferModal: default, validating, submitting, success, error",
+          "NFTCard: with image, without image, loading",
+          "Toast: success, error, pending, info"
+        ]
+      },
+      {
+        "layer": "Integration Tests - Reads (Vitest)",
+        "description": "Test real GalaChain API calls for read operations using provided test address",
+        "walletRequired": false,
+        "automatable": true,
+        "setup": "Provide TEST_WALLET_ADDRESS env var with known balances",
+        "examples": [
+          "Fetch real token balances for test address",
+          "Fetch real NFT list for test address",
+          "Fetch real allowances for test address",
+          "Verify response parsing matches expected types"
+        ]
+      },
+      {
+        "layer": "E2E Tests - UI Flows (Playwright)",
+        "description": "Full user flows with mocked wallet state injected",
+        "walletRequired": false,
+        "automatable": true,
+        "mockStrategy": "Inject window.__MOCK_WALLET__ before page load",
+        "examples": [
+          "Navigate between pages",
+          "Token list displays and sorts",
+          "NFT filtering works",
+          "Modal opens/closes correctly",
+          "Form validation messages appear",
+          "Toast notifications display"
+        ]
+      },
+      {
+        "layer": "Manual Testing - Wallet Connection",
+        "description": "Real MetaMask wallet connection flows",
+        "walletRequired": true,
+        "automatable": false,
+        "checklist": [
+          "MetaMask popup appears on connect click",
+          "User can approve connection",
+          "User can reject connection (error shown)",
+          "Address displays correctly after connection",
+          "Disconnect clears state",
+          "Auto-reconnect works on page reload",
+          "Wrong network shows appropriate error"
+        ]
+      },
+      {
+        "layer": "Manual Testing - Write Operations",
+        "description": "Real transaction signing with MetaMask",
+        "walletRequired": true,
+        "automatable": false,
+        "checklist": [
+          "Transfer: MetaMask signature popup appears",
+          "Transfer: User can approve, transaction succeeds",
+          "Transfer: User can reject, error shown",
+          "Mint: Signature flow works (if authorized)",
+          "Burn: Signature flow works with confirmation",
+          "Create Collection: Signature flow works",
+          "Create Class: Signature flow works"
+        ]
+      }
+    ],
+    "mockingPatterns": {
+      "walletStoreMock": {
+        "description": "Pre-populate wallet store with connected state",
+        "code": "const walletStore = useWalletStore(); walletStore.$patch({ connected: true, address: 'client|testaddr' })"
+      },
+      "galachainClientMock": {
+        "description": "Mock the GalaChain client module",
+        "code": "vi.mock('@/lib/galachainClient', () => ({ fetchBalances: vi.fn().mockResolvedValue({ Data: mockTokens }), transfer: vi.fn().mockResolvedValue({ Status: 1 }) }))"
+      },
+      "browserConnectClientMock": {
+        "description": "Mock @gala-chain/connect BrowserConnectClient",
+        "code": "vi.mock('@gala-chain/connect', () => ({ BrowserConnectClient: vi.fn().mockImplementation(() => ({ connect: vi.fn(), send: vi.fn() })) }))"
+      },
+      "playwrightWalletInjection": {
+        "description": "Inject mock wallet state for E2E tests",
+        "code": "await page.addInitScript(() => { window.__MOCK_WALLET__ = { connected: true, address: 'client|testaddr' } })"
+      }
+    },
+    "testDataRequirements": {
+      "testWalletAddress": {
+        "description": "A GalaChain wallet address with known token balances for integration tests",
+        "format": "client|<hex>",
+        "requirements": [
+          "Has at least 2 different fungible token balances",
+          "Has at least 3 NFTs from at least 2 collections",
+          "Optionally has mint/burn authority on a test token"
+        ]
+      },
+      "mockTokenFixtures": {
+        "description": "Static mock data for unit/component tests",
+        "files": [
+          "client/__tests__/fixtures/tokens.ts",
+          "client/__tests__/fixtures/nfts.ts",
+          "client/__tests__/fixtures/collections.ts",
+          "client/__tests__/fixtures/allowances.ts"
+        ]
+      }
+    },
+    "coverageGoals": {
+      "unit": "90%+ for pure functions and utilities",
+      "stores": "80%+ for state management logic",
+      "components": "70%+ for interactive components",
+      "integration": "Key read flows covered",
+      "e2e": "Critical user journeys covered",
+      "manual": "All wallet signing flows verified before release"
+    }
   },
   "requirements": [
     {
@@ -76,7 +255,11 @@
         "Configure .gitignore for dist/, node_modules/, .env"
       ],
       "passes": false,
-      "notes": ""
+      "notes": "",
+      "testing": {
+        "automated": ["Build script completes without errors", "Dev script starts both servers"],
+        "manual": []
+      }
     },
     {
       "category": "vue-client-setup",
@@ -95,7 +278,11 @@
         "Configure path alias @ pointing to client/src/"
       ],
       "passes": false,
-      "notes": ""
+      "notes": "",
+      "testing": {
+        "automated": ["Vite dev server starts", "TypeScript compiles without errors", "Tailwind classes work"],
+        "manual": []
+      }
     },
     {
       "category": "nestjs-static-serving",
@@ -110,7 +297,11 @@
         "Ensure API routes under /api prefix work correctly"
       ],
       "passes": false,
-      "notes": ""
+      "notes": "",
+      "testing": {
+        "automated": ["Jest test: API routes return expected responses", "Integration: SPA routes serve index.html"],
+        "manual": ["Verify production build serves correctly in browser"]
+      }
     },
     {
       "category": "environment-configuration",
@@ -129,7 +320,11 @@
         "Add environment validation on NestJS startup"
       ],
       "passes": false,
-      "notes": ""
+      "notes": "",
+      "testing": {
+        "automated": ["Unit test: config validation rejects invalid values", "Unit test: config returns correct defaults"],
+        "manual": []
+      }
     },
     {
       "category": "shared-types",
@@ -146,7 +341,11 @@
         "Configure tsconfig paths so both src/ and client/ can import from @shared/*"
       ],
       "passes": false,
-      "notes": ""
+      "notes": "",
+      "testing": {
+        "automated": ["TypeScript compiles - types are valid"],
+        "manual": []
+      }
     },
     {
       "category": "nestjs-health-api",
@@ -162,7 +361,11 @@
         "Add request logging middleware for development"
       ],
       "passes": false,
-      "notes": "Backend is minimal for MVP - most operations are client-side direct to GalaChain"
+      "notes": "Backend is minimal for MVP - most operations are client-side direct to GalaChain",
+      "testing": {
+        "automated": ["Jest test: GET /api/health returns 200 with expected shape"],
+        "manual": []
+      }
     },
     {
       "category": "railway-deployment",
@@ -178,7 +381,11 @@
         "Document Railway deployment steps in README"
       ],
       "passes": false,
-      "notes": "Railway auto-detects Node.js, runs npm install, npm run build, npm start"
+      "notes": "Railway auto-detects Node.js, runs npm install, npm run build, npm start",
+      "testing": {
+        "automated": ["Build completes without errors"],
+        "manual": ["Deploy to Railway staging environment and verify app loads"]
+      }
     },
     {
       "category": "wallet-connection",
@@ -199,7 +406,28 @@
         "Handle connection errors with user-friendly messages"
       ],
       "passes": false,
-      "notes": ""
+      "notes": "",
+      "testing": {
+        "automated": [
+          "Store test: connect() sets isConnecting then connected",
+          "Store test: disconnect() clears all state",
+          "Store test: error state set on connection failure",
+          "Component test: button shows 'Connect Wallet' when disconnected",
+          "Component test: button shows truncated address when connected",
+          "Component test: dropdown appears on click when connected",
+          "Storybook: all wallet button states"
+        ],
+        "manual": [
+          "REQUIRED: MetaMask popup appears when clicking Connect",
+          "REQUIRED: Approving connection shows address in UI",
+          "REQUIRED: Rejecting connection shows error message",
+          "REQUIRED: Disconnect clears UI and localStorage",
+          "REQUIRED: Page reload auto-reconnects if previously connected",
+          "REQUIRED: Test with MetaMask not installed (shows install prompt)"
+        ]
+      },
+      "manualTestingRequired": true,
+      "manualTestingPrompt": "Please test wallet connection with MetaMask: connect, reject, disconnect, and auto-reconnect flows."
     },
     {
       "category": "galachain-client",
@@ -217,7 +445,19 @@
         "Export typed methods: fetchBalances, fetchAllowances, transfer, mint, burn"
       ],
       "passes": false,
-      "notes": ""
+      "notes": "",
+      "testing": {
+        "automated": [
+          "Unit test: error code mapping returns correct messages",
+          "Unit test: client uses correct URLs per environment",
+          "Integration test: fetchBalances returns data for test address"
+        ],
+        "manual": [
+          "REQUIRED: Verify submit() triggers MetaMask signature popup"
+        ]
+      },
+      "manualTestingRequired": true,
+      "manualTestingPrompt": "Please verify that write operations trigger MetaMask signing popup."
     },
     {
       "category": "layout-navigation",
@@ -236,7 +476,16 @@
         "Create client/src/components/ui/EmptyState.vue for empty lists"
       ],
       "passes": false,
-      "notes": ""
+      "notes": "",
+      "testing": {
+        "automated": [
+          "E2E test: navigation between all routes works",
+          "E2E test: active tab highlighted correctly",
+          "Component test: EmptyState renders message",
+          "Storybook: navigation states, loading spinner, empty state"
+        ],
+        "manual": []
+      }
     },
     {
       "category": "fungible-tokens-list",
@@ -259,7 +508,22 @@
         "Handle empty state when no tokens owned"
       ],
       "passes": false,
-      "notes": ""
+      "notes": "",
+      "testing": {
+        "automated": [
+          "Store test: fetchTokens populates tokens array",
+          "Store test: sorting changes order correctly",
+          "Component test: TokenCard displays balance formatted",
+          "Component test: empty state shown when tokens empty",
+          "Integration test: fetch real balances for test address",
+          "Storybook: TokenCard states, loading skeleton, empty state"
+        ],
+        "manual": [
+          "RECOMMENDED: Verify real token list loads for connected wallet"
+        ]
+      },
+      "manualTestingRequired": true,
+      "manualTestingPrompt": "Please connect wallet and verify your token balances display correctly."
     },
     {
       "category": "fungible-tokens-transfer",
@@ -280,7 +544,27 @@
         "Add confirmation step before final submit"
       ],
       "passes": false,
-      "notes": ""
+      "notes": "",
+      "testing": {
+        "automated": [
+          "Unit test: zod schema rejects invalid addresses",
+          "Unit test: zod schema rejects amount > balance",
+          "Unit test: TransferTokenDto built correctly",
+          "Component test: modal opens and closes",
+          "Component test: validation errors display",
+          "Component test: max button sets full balance",
+          "Component test: submit button disabled during loading",
+          "Storybook: modal states (default, validating, submitting, error, success)"
+        ],
+        "manual": [
+          "REQUIRED: Transfer tokens with MetaMask signing",
+          "REQUIRED: Verify balance updates after transfer",
+          "REQUIRED: Reject transaction in MetaMask - verify error shown",
+          "REQUIRED: Test with insufficient balance"
+        ]
+      },
+      "manualTestingRequired": true,
+      "manualTestingPrompt": "Please test token transfer: complete a transfer, reject one in MetaMask, and try an invalid amount."
     },
     {
       "category": "fungible-tokens-mint",
@@ -299,7 +583,24 @@
         "Display updated remaining mint allowance"
       ],
       "passes": false,
-      "notes": ""
+      "notes": "",
+      "testing": {
+        "automated": [
+          "Unit test: useTokenAuthority returns false when no allowance",
+          "Unit test: MintTokenDto built correctly",
+          "Component test: Mint button hidden when not authorized",
+          "Component test: Mint button visible when authorized",
+          "Component test: validation rejects amount > allowance",
+          "Storybook: MintModal states"
+        ],
+        "manual": [
+          "REQUIRED: Mint tokens with authorized wallet",
+          "REQUIRED: Verify balance increases after mint",
+          "REQUIRED: Verify mint allowance decreases after mint"
+        ]
+      },
+      "manualTestingRequired": true,
+      "manualTestingPrompt": "Please test token minting with an authorized wallet. Verify balance and allowance update correctly."
     },
     {
       "category": "fungible-tokens-burn",
@@ -318,7 +619,23 @@
         "Refresh balances on successful burn"
       ],
       "passes": false,
-      "notes": ""
+      "notes": "",
+      "testing": {
+        "automated": [
+          "Unit test: BurnTokensDto built correctly",
+          "Component test: Burn button hidden when not authorized",
+          "Component test: submit disabled until checkbox checked",
+          "Component test: warning banner displays",
+          "Storybook: BurnModal states"
+        ],
+        "manual": [
+          "REQUIRED: Burn tokens with authorized wallet",
+          "REQUIRED: Verify balance decreases after burn",
+          "REQUIRED: Verify confirmation checkbox is required"
+        ]
+      },
+      "manualTestingRequired": true,
+      "manualTestingPrompt": "Please test token burning with an authorized wallet. Verify the confirmation flow and balance update."
     },
     {
       "category": "nft-list",
@@ -343,7 +660,23 @@
         "Handle empty state when no NFTs owned"
       ],
       "passes": false,
-      "notes": ""
+      "notes": "",
+      "testing": {
+        "automated": [
+          "Store test: filteredNFTs getter filters correctly",
+          "Store test: setCollectionFilter updates state",
+          "Component test: NFTCard renders collection and tokenId",
+          "Component test: CollectionFilter shows unique collections",
+          "E2E test: filter persists in URL",
+          "Integration test: fetch real NFTs for test address",
+          "Storybook: NFTCard states, grid layouts, empty state"
+        ],
+        "manual": [
+          "RECOMMENDED: Verify real NFT list loads for connected wallet"
+        ]
+      },
+      "manualTestingRequired": true,
+      "manualTestingPrompt": "Please connect wallet and verify your NFTs display correctly with filtering."
     },
     {
       "category": "nft-transfer",
@@ -362,7 +695,22 @@
         "Add confirmation step showing NFT details before transfer"
       ],
       "passes": false,
-      "notes": ""
+      "notes": "",
+      "testing": {
+        "automated": [
+          "Unit test: TransferTokenDto built with quantity 1",
+          "Component test: NFT preview displays",
+          "Component test: validation rejects invalid address",
+          "Storybook: TransferNFTModal states"
+        ],
+        "manual": [
+          "REQUIRED: Transfer NFT with MetaMask signing",
+          "REQUIRED: Verify NFT removed from list after transfer",
+          "REQUIRED: Reject transaction - verify error shown"
+        ]
+      },
+      "manualTestingRequired": true,
+      "manualTestingPrompt": "Please test NFT transfer: complete a transfer and verify it leaves your wallet."
     },
     {
       "category": "nft-mint",
@@ -381,7 +729,21 @@
         "Refresh NFT list on success"
       ],
       "passes": false,
-      "notes": ""
+      "notes": "",
+      "testing": {
+        "automated": [
+          "Unit test: useNFTMintAuthority returns correct collections",
+          "Component test: Mint button hidden when no authority",
+          "Component test: collection selector populates",
+          "Storybook: MintNFTModal states"
+        ],
+        "manual": [
+          "REQUIRED: Mint NFT with authorized wallet",
+          "REQUIRED: Verify new NFT appears in list"
+        ]
+      },
+      "manualTestingRequired": true,
+      "manualTestingPrompt": "Please test NFT minting with an authorized wallet. Verify new NFT appears in your collection."
     },
     {
       "category": "nft-burn",
@@ -400,7 +762,21 @@
         "Refresh NFT list on success"
       ],
       "passes": false,
-      "notes": ""
+      "notes": "",
+      "testing": {
+        "automated": [
+          "Component test: Burn button hidden when not authorized",
+          "Component test: confirmation required before submit",
+          "Component test: warning prominently displayed",
+          "Storybook: BurnNFTModal states"
+        ],
+        "manual": [
+          "REQUIRED: Burn NFT with authorized wallet",
+          "REQUIRED: Verify NFT removed from list after burn"
+        ]
+      },
+      "manualTestingRequired": true,
+      "manualTestingPrompt": "Please test NFT burning with an authorized wallet. Verify NFT is removed after burning."
     },
     {
       "category": "creators-page",
@@ -416,7 +792,17 @@
         "Add visual divider between Pump and Collection tools sections"
       ],
       "passes": false,
-      "notes": ""
+      "notes": "",
+      "testing": {
+        "automated": [
+          "Component test: Pump CTA links correctly",
+          "Component test: wallet prompt shown when disconnected",
+          "Storybook: PumpEntry states"
+        ],
+        "manual": [
+          "RECOMMENDED: Verify Pump link opens correctly"
+        ]
+      }
     },
     {
       "category": "creators-collections",
@@ -436,7 +822,20 @@
         "Handle empty state for users with no collections"
       ],
       "passes": false,
-      "notes": ""
+      "notes": "",
+      "testing": {
+        "automated": [
+          "Store test: fetchCollections populates state",
+          "Component test: CollectionCard displays details",
+          "Component test: empty state shown when no collections",
+          "Storybook: CollectionCard states, empty state"
+        ],
+        "manual": [
+          "RECOMMENDED: Verify collections load for creator wallet"
+        ]
+      },
+      "manualTestingRequired": true,
+      "manualTestingPrompt": "Please connect a creator wallet and verify your collections display correctly."
     },
     {
       "category": "creators-create-collection",
@@ -454,7 +853,21 @@
         "Handle failure: display error message"
       ],
       "passes": false,
-      "notes": ""
+      "notes": "",
+      "testing": {
+        "automated": [
+          "Unit test: CreateTokenClassDto built correctly",
+          "Unit test: zod schema validates collection params",
+          "Component test: form validation displays errors",
+          "Storybook: CreateCollectionModal states"
+        ],
+        "manual": [
+          "REQUIRED: Create collection with MetaMask signing",
+          "REQUIRED: Verify new collection appears in list"
+        ]
+      },
+      "manualTestingRequired": true,
+      "manualTestingPrompt": "Please test creating a new collection. Verify it appears in your collections after creation."
     },
     {
       "category": "creators-manage-classes",
@@ -471,7 +884,20 @@
         "Refresh class list on success"
       ],
       "passes": false,
-      "notes": ""
+      "notes": "",
+      "testing": {
+        "automated": [
+          "Component test: ClassCard displays properties",
+          "Component test: CreateClassModal validates inputs",
+          "Storybook: ClassCard states, CreateClassModal states"
+        ],
+        "manual": [
+          "REQUIRED: Create class with MetaMask signing",
+          "REQUIRED: Verify new class appears under collection"
+        ]
+      },
+      "manualTestingRequired": true,
+      "manualTestingPrompt": "Please test creating a new class within a collection. Verify it appears after creation."
     },
     {
       "category": "creators-mint-from-collection",
@@ -490,7 +916,21 @@
         "Refresh collection stats on success"
       ],
       "passes": false,
-      "notes": ""
+      "notes": "",
+      "testing": {
+        "automated": [
+          "Unit test: mint DTO built correctly",
+          "Component test: class selector works",
+          "Component test: validation against supply",
+          "Storybook: CollectionMintModal states"
+        ],
+        "manual": [
+          "REQUIRED: Mint from collection with MetaMask signing",
+          "REQUIRED: Verify minted count updates"
+        ]
+      },
+      "manualTestingRequired": true,
+      "manualTestingPrompt": "Please test minting from your collection. Verify the minted count updates correctly."
     },
     {
       "category": "toast-notifications",
@@ -509,7 +949,17 @@
         "Create client/src/composables/useToast.ts helper"
       ],
       "passes": false,
-      "notes": ""
+      "notes": "",
+      "testing": {
+        "automated": [
+          "Store test: addToast creates toast with id",
+          "Store test: removeToast removes correct toast",
+          "Component test: Toast renders correct variant styles",
+          "Component test: dismiss button works",
+          "Storybook: all Toast variants"
+        ],
+        "manual": []
+      }
     },
     {
       "category": "transaction-status",
@@ -525,7 +975,18 @@
         "Show pending transaction count in header (optional)"
       ],
       "passes": false,
-      "notes": ""
+      "notes": "",
+      "testing": {
+        "automated": [
+          "Store test: pending transaction lifecycle",
+          "Store test: recentTxs limited to 10",
+          "Component test: indicator shows count",
+          "Storybook: TransactionIndicator states"
+        ],
+        "manual": [
+          "RECOMMENDED: Verify explorer link works for completed transaction"
+        ]
+      }
     },
     {
       "category": "error-handling",
@@ -543,7 +1004,22 @@
         "Log errors to console in development mode"
       ],
       "passes": false,
-      "notes": ""
+      "notes": "",
+      "testing": {
+        "automated": [
+          "Unit test: error code mapping covers all codes",
+          "Unit test: WalletError parses MetaMask errors",
+          "Component test: ErrorDisplay renders message",
+          "Storybook: ErrorDisplay variants"
+        ],
+        "manual": [
+          "REQUIRED: Reject transaction in MetaMask - verify error message",
+          "REQUIRED: Disconnect network - verify network error shown",
+          "RECOMMENDED: Test with MetaMask not installed"
+        ]
+      },
+      "manualTestingRequired": true,
+      "manualTestingPrompt": "Please test error scenarios: reject a transaction, disconnect network, and verify error messages are user-friendly."
     },
     {
       "category": "responsive-design",
@@ -561,7 +1037,21 @@
         "Add safe-area padding for notched devices"
       ],
       "passes": false,
-      "notes": ""
+      "notes": "",
+      "testing": {
+        "automated": [
+          "E2E test: viewport resize shows/hides mobile menu",
+          "Storybook: component responsive variants"
+        ],
+        "manual": [
+          "REQUIRED: Test on mobile device or emulator",
+          "REQUIRED: Verify touch targets are adequate",
+          "REQUIRED: Verify no horizontal scroll",
+          "REQUIRED: Test wallet connection on mobile browser"
+        ]
+      },
+      "manualTestingRequired": true,
+      "manualTestingPrompt": "Please test the app on a mobile device: navigation, touch targets, and wallet connection via mobile browser."
     },
     {
       "category": "testing",
@@ -570,6 +1060,8 @@
         "Install and configure Vitest for client/ tests",
         "Install @vue/test-utils for component testing",
         "Create client/vitest.config.ts",
+        "Create client/__tests__/fixtures/ with mock data",
+        "Create client/__tests__/mocks/ with module mocks",
         "Add unit tests for Pinia stores: wallet, tokens, nfts",
         "Add unit tests for composables: useWallet, useGalaChain",
         "Add component tests for WalletConnect.vue",
@@ -577,10 +1069,16 @@
         "Mock @gala-chain packages in tests",
         "Install and configure Jest for src/ (NestJS) tests",
         "Add health controller test",
-        "Add npm script: test (runs both client and server tests)"
+        "Add npm script: test (runs both client and server tests)",
+        "Configure Storybook for visual component documentation",
+        "Add Playwright for E2E tests with mock wallet injection"
       ],
       "passes": false,
-      "notes": ""
+      "notes": "",
+      "testing": {
+        "automated": ["All tests pass", "Coverage meets goals"],
+        "manual": []
+      }
     },
     {
       "category": "export-placeholder",
@@ -595,9 +1093,87 @@
         "Style as grayed/muted compared to active features"
       ],
       "passes": false,
-      "notes": "This feature is marked as 'coming soon' in the PRD and is not part of MVP scope"
+      "notes": "This feature is marked as 'coming soon' in the PRD and is not part of MVP scope",
+      "testing": {
+        "automated": [
+          "Component test: Coming Soon message displays",
+          "Storybook: ExportComingSoon component"
+        ],
+        "manual": []
+      }
     }
   ],
+  "manualTestingChecklist": {
+    "description": "Consolidated checklist of all manual testing required before release",
+    "preRelease": [
+      {
+        "category": "Wallet Connection",
+        "tests": [
+          "MetaMask popup appears on connect click",
+          "User can approve connection - address displays",
+          "User can reject connection - error message shown",
+          "Disconnect clears UI and state",
+          "Auto-reconnect works on page reload",
+          "MetaMask not installed shows appropriate message"
+        ]
+      },
+      {
+        "category": "Token Operations",
+        "tests": [
+          "Token list loads for connected wallet",
+          "Transfer: complete transaction with signing",
+          "Transfer: reject in MetaMask - error shown",
+          "Mint (if authorized): complete transaction",
+          "Mint: balance and allowance update correctly",
+          "Burn (if authorized): complete transaction with confirmation",
+          "Burn: balance decreases after burn"
+        ]
+      },
+      {
+        "category": "NFT Operations",
+        "tests": [
+          "NFT list loads for connected wallet",
+          "Collection filter works correctly",
+          "Transfer NFT: complete transaction with signing",
+          "Transfer NFT: NFT removed from list after transfer",
+          "Mint NFT (if authorized): complete transaction",
+          "Mint NFT: new NFT appears in list",
+          "Burn NFT (if authorized): complete transaction",
+          "Burn NFT: NFT removed from list"
+        ]
+      },
+      {
+        "category": "Creator Operations",
+        "tests": [
+          "Collections load for creator wallet",
+          "Create collection: complete transaction",
+          "Create collection: new collection appears",
+          "Create class: complete transaction",
+          "Create class: class appears under collection",
+          "Mint from collection: complete transaction",
+          "Mint from collection: minted count updates"
+        ]
+      },
+      {
+        "category": "Error Handling",
+        "tests": [
+          "Reject transaction in MetaMask - user-friendly error",
+          "Network disconnection - appropriate error shown",
+          "Invalid input - validation errors display"
+        ]
+      },
+      {
+        "category": "Responsive Design",
+        "tests": [
+          "Mobile navigation (hamburger menu)",
+          "Touch targets adequate on mobile",
+          "No horizontal scroll on any page",
+          "Modals usable on mobile",
+          "Wallet connection works on mobile browser"
+        ]
+      }
+    ]
+  },
   "mvpChecklist": [
     {
       "item": "FT balances + allowances",
@@ -639,7 +1215,8 @@
     "stateManagement": "Pinia stores: wallet, tokens, nfts, creatorCollections, transactions, toasts. Composables wrap store actions for component use.",
     "apiDesign": "Frontend talks directly to GalaChain for most operations. NestJS /api routes reserved for future backend-required features (export job processing).",
     "authorization": "Mint/burn buttons conditionally rendered via v-if based on wallet authority. Authority checked via GalaChain queries (FetchAllowances, token class authority).",
-    "railwayDeployment": "Railway auto-detects Node.js. Runs: npm install → npm run build → npm start. Single service, no config needed. Procfile optional."
+    "railwayDeployment": "Railway auto-detects Node.js. Runs: npm install → npm run build → npm start. Single service, no config needed. Procfile optional.",
+    "testability": "Code structured for testability: wallet/signing isolated in composables, business logic separate, stores mockable via @pinia/testing, client layer fully mockable."
   },
   "scripts": {
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
@@ -652,6 +1229,9 @@
     "start:prod": "NODE_ENV=production node dist/main.js",
     "test": "npm run test:client && npm run test:server",
     "test:client": "cd client && vitest run",
-    "test:server": "jest"
+    "test:server": "jest",
+    "test:e2e": "cd client && playwright test",
+    "storybook": "cd client && storybook dev -p 6006",
+    "build:storybook": "cd client && storybook build"
   }
 }
