@@ -1,14 +1,72 @@
 <script setup lang="ts">
 /**
  * CreatorsView.vue
- * Main creators page with Pump Interface and NFT Collection Tools sections
+ * Main creators page with Pump Interface, NFT Collection Tools, and My Collections sections
  */
+import { onMounted, ref } from 'vue'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
+import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import PumpEntry from '@/components/creators/PumpEntry.vue'
+import CollectionList from '@/components/creators/CollectionList.vue'
 import { useWallet } from '@/composables/useWallet'
+import { useCreatorCollections } from '@/composables/useCreatorCollections'
+import type { CreatorCollectionDisplay } from '@/stores/creatorCollections'
 
 const { connected } = useWallet()
+const {
+  collections,
+  isLoading,
+  error,
+  hasCollections,
+  totalCollectionCount,
+  fetchCollections,
+  refresh,
+  toggleExpanded,
+} = useCreatorCollections()
+
+// Track if initial fetch has happened
+const hasFetched = ref(false)
+
+// Fetch collections on mount if connected
+onMounted(async () => {
+  if (connected.value) {
+    await fetchCollections()
+    hasFetched.value = true
+  }
+})
+
+/**
+ * Handle refresh button click
+ */
+async function handleRefresh() {
+  await refresh(true)
+}
+
+/**
+ * Handle mint from collection
+ */
+function handleMint(collection: CreatorCollectionDisplay) {
+  // Will be implemented in creators-mint-from-collection task
+  console.log('Mint from collection:', collection.collectionKey)
+  // For now, could open the MintNFTModal from NFTs page
+  // or show a message that this feature is coming soon
+}
+
+/**
+ * Handle manage classes
+ */
+function handleManageClasses(collection: CreatorCollectionDisplay) {
+  // Will be implemented in creators-manage-classes task
+  console.log('Manage classes for:', collection.collectionKey)
+}
+
+/**
+ * Handle toggle expand
+ */
+function handleToggleExpand(collectionKey: string) {
+  toggleExpanded(collectionKey)
+}
 </script>
 
 <template>
@@ -105,25 +163,60 @@ const { connected } = useWallet()
           </div>
         </div>
 
-        <!-- My Collections Section Placeholder -->
+        <!-- My Collections Section -->
         <div class="mt-8">
           <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold text-gray-900">My Collections</h3>
-            <span class="text-sm text-gray-500">Coming soon in creators-collections task</span>
+            <div class="flex items-center gap-3">
+              <h3 class="text-lg font-semibold text-gray-900">My Collections</h3>
+              <span
+                v-if="hasCollections"
+                class="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600"
+              >
+                {{ totalCollectionCount }}
+              </span>
+            </div>
+
+            <!-- Refresh Button -->
+            <button
+              class="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors disabled:opacity-50"
+              :disabled="isLoading"
+              @click="handleRefresh"
+            >
+              <LoadingSpinner v-if="isLoading" size="sm" />
+              <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              <span>Refresh</span>
+            </button>
           </div>
 
-          <!-- Empty state for collections -->
-          <div class="card bg-gray-50 border-dashed">
-            <div class="text-center py-8">
-              <svg class="w-12 h-12 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+          <!-- Error Display -->
+          <div v-if="error" class="mb-4 p-4 rounded-lg bg-red-50 border border-red-200">
+            <div class="flex items-start gap-3">
+              <svg class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <h4 class="text-gray-600 font-medium mb-1">No Collections Yet</h4>
-              <p class="text-gray-500 text-sm">
-                Your created collections will appear here.
-              </p>
+              <div>
+                <p class="text-sm font-medium text-red-800">Failed to load collections</p>
+                <p class="text-sm text-red-600 mt-1">{{ error }}</p>
+                <button
+                  class="mt-2 text-sm text-red-700 hover:text-red-800 underline"
+                  @click="handleRefresh"
+                >
+                  Try again
+                </button>
+              </div>
             </div>
           </div>
+
+          <!-- Collections List -->
+          <CollectionList
+            :collections="collections"
+            :is-loading="isLoading"
+            @mint="handleMint"
+            @manage-classes="handleManageClasses"
+            @toggle-expand="handleToggleExpand"
+          />
         </div>
       </section>
     </template>

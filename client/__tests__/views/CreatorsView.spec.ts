@@ -4,11 +4,21 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import CreatorsView from '@/views/CreatorsView.vue'
 
 // Mock connected ref that can be changed between tests
 const mockConnected = ref(false)
+
+// Mock useCreatorCollections data
+const mockCollections = ref<any[]>([])
+const mockIsLoading = ref(false)
+const mockError = ref<string | null>(null)
+const mockHasCollections = computed(() => mockCollections.value.length > 0)
+const mockTotalCollectionCount = computed(() => mockCollections.value.length)
+const mockFetchCollections = vi.fn()
+const mockRefresh = vi.fn()
+const mockToggleExpanded = vi.fn()
 
 // Mock the useWallet composable
 vi.mock('@/composables/useWallet', () => ({
@@ -17,10 +27,27 @@ vi.mock('@/composables/useWallet', () => ({
   }))
 }))
 
+// Mock the useCreatorCollections composable
+vi.mock('@/composables/useCreatorCollections', () => ({
+  useCreatorCollections: vi.fn(() => ({
+    collections: mockCollections,
+    isLoading: mockIsLoading,
+    error: mockError,
+    hasCollections: mockHasCollections,
+    totalCollectionCount: mockTotalCollectionCount,
+    fetchCollections: mockFetchCollections,
+    refresh: mockRefresh,
+    toggleExpanded: mockToggleExpanded,
+  }))
+}))
+
 describe('CreatorsView.vue', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockConnected.value = false
+    mockCollections.value = []
+    mockIsLoading.value = false
+    mockError.value = null
   })
 
   describe('when wallet is not connected', () => {
@@ -35,7 +62,9 @@ describe('CreatorsView.vue', () => {
           stubs: {
             PageHeader: true,
             EmptyState: true,
-            PumpEntry: true
+            PumpEntry: true,
+            CollectionList: true,
+            LoadingSpinner: true,
           }
         }
       })
@@ -50,7 +79,9 @@ describe('CreatorsView.vue', () => {
           stubs: {
             PageHeader: true,
             EmptyState: true,
-            PumpEntry: true
+            PumpEntry: true,
+            CollectionList: true,
+            LoadingSpinner: true,
           }
         }
       })
@@ -68,7 +99,9 @@ describe('CreatorsView.vue', () => {
           stubs: {
             PageHeader: true,
             EmptyState: true,
-            PumpEntry: true
+            PumpEntry: true,
+            CollectionList: true,
+            LoadingSpinner: true,
           }
         }
       })
@@ -83,7 +116,9 @@ describe('CreatorsView.vue', () => {
           stubs: {
             PageHeader: true,
             EmptyState: true,
-            PumpEntry: true
+            PumpEntry: true,
+            CollectionList: true,
+            LoadingSpinner: true,
           }
         }
       })
@@ -104,7 +139,9 @@ describe('CreatorsView.vue', () => {
           stubs: {
             PageHeader: true,
             EmptyState: true,
-            PumpEntry: true
+            PumpEntry: true,
+            CollectionList: true,
+            LoadingSpinner: true,
           }
         }
       })
@@ -119,7 +156,9 @@ describe('CreatorsView.vue', () => {
           stubs: {
             PageHeader: true,
             EmptyState: true,
-            PumpEntry: true
+            PumpEntry: true,
+            CollectionList: true,
+            LoadingSpinner: true,
           }
         }
       })
@@ -134,7 +173,9 @@ describe('CreatorsView.vue', () => {
           stubs: {
             PageHeader: true,
             EmptyState: true,
-            PumpEntry: true
+            PumpEntry: true,
+            CollectionList: true,
+            LoadingSpinner: true,
           }
         }
       })
@@ -151,7 +192,9 @@ describe('CreatorsView.vue', () => {
           stubs: {
             PageHeader: true,
             EmptyState: true,
-            PumpEntry: true
+            PumpEntry: true,
+            CollectionList: true,
+            LoadingSpinner: true,
           }
         }
       })
@@ -166,7 +209,9 @@ describe('CreatorsView.vue', () => {
           stubs: {
             PageHeader: true,
             EmptyState: true,
-            PumpEntry: true
+            PumpEntry: true,
+            CollectionList: true,
+            LoadingSpinner: true,
           }
         }
       })
@@ -182,7 +227,9 @@ describe('CreatorsView.vue', () => {
           stubs: {
             PageHeader: true,
             EmptyState: true,
-            PumpEntry: true
+            PumpEntry: true,
+            CollectionList: true,
+            LoadingSpinner: true,
           }
         }
       })
@@ -198,7 +245,9 @@ describe('CreatorsView.vue', () => {
           stubs: {
             PageHeader: true,
             EmptyState: true,
-            PumpEntry: true
+            PumpEntry: true,
+            CollectionList: true,
+            LoadingSpinner: true,
           }
         }
       })
@@ -206,20 +255,21 @@ describe('CreatorsView.vue', () => {
       expect(wrapper.text()).toContain('My Collections')
     })
 
-    it('renders empty state for collections', () => {
+    it('renders CollectionList component', () => {
       const wrapper = mount(CreatorsView, {
         global: {
           plugins: [createTestingPinia()],
           stubs: {
             PageHeader: true,
             EmptyState: true,
-            PumpEntry: true
+            PumpEntry: true,
+            CollectionList: true,
+            LoadingSpinner: true,
           }
         }
       })
 
-      expect(wrapper.text()).toContain('No Collections Yet')
-      expect(wrapper.text()).toContain('Your created collections will appear here')
+      expect(wrapper.findComponent({ name: 'CollectionList' }).exists()).toBe(true)
     })
 
     it('has Create Collection button (disabled)', () => {
@@ -229,7 +279,9 @@ describe('CreatorsView.vue', () => {
           stubs: {
             PageHeader: true,
             EmptyState: true,
-            PumpEntry: true
+            PumpEntry: true,
+            CollectionList: true,
+            LoadingSpinner: true,
           }
         }
       })
@@ -248,7 +300,9 @@ describe('CreatorsView.vue', () => {
           stubs: {
             PageHeader: true,
             EmptyState: true,
-            PumpEntry: true
+            PumpEntry: true,
+            CollectionList: true,
+            LoadingSpinner: true,
           }
         }
       })
@@ -267,7 +321,9 @@ describe('CreatorsView.vue', () => {
           stubs: {
             PageHeader: true,
             EmptyState: true,
-            PumpEntry: true
+            PumpEntry: true,
+            CollectionList: true,
+            LoadingSpinner: true,
           }
         }
       })
@@ -275,6 +331,186 @@ describe('CreatorsView.vue', () => {
       // EmptyState should not exist with "Connect Your Wallet" title
       const emptyState = wrapper.findComponent({ name: 'EmptyState' })
       expect(emptyState.exists()).toBe(false)
+    })
+
+    it('renders refresh button', () => {
+      const wrapper = mount(CreatorsView, {
+        global: {
+          plugins: [createTestingPinia()],
+          stubs: {
+            PageHeader: true,
+            EmptyState: true,
+            PumpEntry: true,
+            CollectionList: true,
+            LoadingSpinner: true,
+          }
+        }
+      })
+
+      const buttons = wrapper.findAll('button')
+      const refreshButton = buttons.find(b => b.text().includes('Refresh'))
+
+      expect(refreshButton).toBeDefined()
+    })
+  })
+
+  describe('collection count badge', () => {
+    beforeEach(() => {
+      mockConnected.value = true
+    })
+
+    it('shows collection count badge when has collections', () => {
+      mockCollections.value = [
+        { collectionKey: 'test1', name: 'Test1' },
+        { collectionKey: 'test2', name: 'Test2' },
+      ]
+
+      const wrapper = mount(CreatorsView, {
+        global: {
+          plugins: [createTestingPinia()],
+          stubs: {
+            PageHeader: true,
+            EmptyState: true,
+            PumpEntry: true,
+            CollectionList: true,
+            LoadingSpinner: true,
+          }
+        }
+      })
+
+      expect(wrapper.text()).toContain('2')
+    })
+
+    it('does not show count badge when no collections', () => {
+      mockCollections.value = []
+
+      const wrapper = mount(CreatorsView, {
+        global: {
+          plugins: [createTestingPinia()],
+          stubs: {
+            PageHeader: true,
+            EmptyState: true,
+            PumpEntry: true,
+            CollectionList: true,
+            LoadingSpinner: true,
+          }
+        }
+      })
+
+      // Should only have "My Collections" text without a count badge
+      const allH3s = wrapper.findAll('h3')
+      const myCollectionsHeader = allH3s.find(h3 => h3.text() === 'My Collections')
+      expect(myCollectionsHeader).toBeDefined()
+      expect(myCollectionsHeader?.text()).toBe('My Collections')
+    })
+  })
+
+  describe('error handling', () => {
+    beforeEach(() => {
+      mockConnected.value = true
+    })
+
+    it('displays error message when error is set', () => {
+      mockError.value = 'Failed to load collections'
+
+      const wrapper = mount(CreatorsView, {
+        global: {
+          plugins: [createTestingPinia()],
+          stubs: {
+            PageHeader: true,
+            EmptyState: true,
+            PumpEntry: true,
+            CollectionList: true,
+            LoadingSpinner: true,
+          }
+        }
+      })
+
+      expect(wrapper.text()).toContain('Failed to load collections')
+    })
+
+    it('shows try again button on error', () => {
+      mockError.value = 'Some error'
+
+      const wrapper = mount(CreatorsView, {
+        global: {
+          plugins: [createTestingPinia()],
+          stubs: {
+            PageHeader: true,
+            EmptyState: true,
+            PumpEntry: true,
+            CollectionList: true,
+            LoadingSpinner: true,
+          }
+        }
+      })
+
+      expect(wrapper.text()).toContain('Try again')
+    })
+
+    it('does not show error section when no error', () => {
+      mockError.value = null
+
+      const wrapper = mount(CreatorsView, {
+        global: {
+          plugins: [createTestingPinia()],
+          stubs: {
+            PageHeader: true,
+            EmptyState: true,
+            PumpEntry: true,
+            CollectionList: true,
+            LoadingSpinner: true,
+          }
+        }
+      })
+
+      expect(wrapper.text()).not.toContain('Failed to load collections')
+    })
+  })
+
+  describe('loading state', () => {
+    beforeEach(() => {
+      mockConnected.value = true
+    })
+
+    it('shows LoadingSpinner when loading', () => {
+      mockIsLoading.value = true
+
+      const wrapper = mount(CreatorsView, {
+        global: {
+          plugins: [createTestingPinia()],
+          stubs: {
+            PageHeader: true,
+            EmptyState: true,
+            PumpEntry: true,
+            CollectionList: true,
+            LoadingSpinner: true,
+          }
+        }
+      })
+
+      expect(wrapper.findComponent({ name: 'LoadingSpinner' }).exists()).toBe(true)
+    })
+
+    it('disables refresh button when loading', () => {
+      mockIsLoading.value = true
+
+      const wrapper = mount(CreatorsView, {
+        global: {
+          plugins: [createTestingPinia()],
+          stubs: {
+            PageHeader: true,
+            EmptyState: true,
+            PumpEntry: true,
+            CollectionList: true,
+            LoadingSpinner: true,
+          }
+        }
+      })
+
+      const buttons = wrapper.findAll('button')
+      const refreshButton = buttons.find(b => b.text().includes('Refresh'))
+      expect(refreshButton?.attributes('disabled')).toBeDefined()
     })
   })
 
@@ -290,7 +526,9 @@ describe('CreatorsView.vue', () => {
           stubs: {
             PageHeader: true,
             EmptyState: true,
-            PumpEntry: true
+            PumpEntry: true,
+            CollectionList: true,
+            LoadingSpinner: true,
           }
         }
       })
@@ -307,13 +545,15 @@ describe('CreatorsView.vue', () => {
           stubs: {
             PageHeader: true,
             EmptyState: true,
-            PumpEntry: true
+            PumpEntry: true,
+            CollectionList: true,
+            LoadingSpinner: true,
           }
         }
       })
 
       const cards = wrapper.findAll('.nft-tools-section .card')
-      expect(cards.length).toBe(3) // Create Collection, Manage Classes, empty state
+      expect(cards.length).toBe(2) // Create Collection, Manage Classes
 
       // Check that the tool cards have hover effects
       const toolCards = cards.filter(c => c.classes().includes('hover:shadow-md'))

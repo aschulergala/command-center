@@ -826,3 +826,60 @@
   - Gradient border effect: use outer container with gradient bg and inner container with solid bg
   - Animation on gradient: use background-size > 100% and animate background-position
 ---
+## Iteration 20 - Creators Collections Management
+- What was implemented:
+  - Created client/src/stores/creatorCollections.ts Pinia store with:
+    - State: collections[], isLoading, error, sortBy, lastFetched
+    - Actions: setAllowances(), setBalances(), setLoading(), setError(), setSort(), toggleExpanded(), clearCollections(), getCollectionByKey(), needsRefresh()
+    - Getters: sortedCollections (by name or minted count), hasCollections, totalCollectionCount
+    - Collections identified by Mint allowance with instance 0 (collection-level authority)
+    - CreatorCollectionDisplay extends CollectionDisplay with mintAllowanceRaw, mintAllowanceFormatted, hasUnlimitedMint, classes, isExpanded
+    - CreatorClassDisplay type for future class management
+    - UNLIMITED_THRESHOLD constant (1e50) for detecting unlimited mint
+  - Created client/src/composables/useCreatorCollections.ts with:
+    - Reactive access to collections store data
+    - fetchCollections() queries allowances then enriches with balances
+    - refresh(), setSort(), toggleExpanded(), getCollection() actions
+    - clearCollections() for wallet disconnect cleanup
+    - Watch for wallet connect/disconnect and address changes
+  - Created client/src/components/creators/CollectionCard.vue with:
+    - Collection image/placeholder with initials
+    - Collection name, key (truncated if long), Authority badge
+    - Owned count and mint allowance stats
+    - Mint button (enabled), Manage Classes button (disabled for future task)
+    - Expand/collapse button (disabled for future class list)
+    - Expandable classes section (empty state placeholder)
+  - Created client/src/components/creators/CollectionCardSkeleton.vue for loading state
+  - Created client/src/components/creators/CollectionList.vue with:
+    - Loading skeleton state (3 skeletons)
+    - Empty state using EmptyState component
+    - Collection cards with event forwarding (mint, manageClasses, toggleExpand)
+  - Updated client/src/views/CreatorsView.vue with:
+    - useCreatorCollections composable integration
+    - My Collections section header with count badge
+    - Refresh button with loading spinner
+    - Error display with retry option
+    - CollectionList component rendering collections
+    - Handler functions for mint, manageClasses, toggleExpand events
+    - fetchCollections on mount if connected
+- Files changed:
+  - client/src/stores/creatorCollections.ts (new)
+  - client/src/composables/useCreatorCollections.ts (new)
+  - client/src/components/creators/CollectionCard.vue (new)
+  - client/src/components/creators/CollectionCardSkeleton.vue (new)
+  - client/src/components/creators/CollectionList.vue (new)
+  - client/src/views/CreatorsView.vue (updated)
+  - client/__tests__/stores/creatorCollections.spec.ts (new - 26 tests)
+  - client/__tests__/components/creators/CollectionCard.spec.ts (new - 17 tests)
+  - client/__tests__/components/creators/CollectionList.spec.ts (new - 8 tests)
+  - client/__tests__/views/CreatorsView.spec.ts (updated)
+  - IMPLEMENTATION_PLAN.json (updated)
+- GalaChain tools used: None (used existing useGalaChain composable for allowances/balances)
+- Tests: All 669 tests pass (643 client + 26 server)
+- Learnings for future iterations:
+  - Collection authority identified by Mint allowance with instance 0 (collection-level, not instance-level)
+  - Use AllowanceTypeEnum type import for type annotations but pass actual value at runtime
+  - Component test for text containing 'Classes' must account for 'Manage Classes' button text
+  - Testing multiple h3 elements: use findAll() and array method find() instead of first h3
+  - Unused defineProps assignment causes vue-tsc error - just call defineProps without assignment
+---

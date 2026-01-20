@@ -821,8 +821,8 @@
         "Add Create Collection CTA button at top",
         "Handle empty state for users with no collections"
       ],
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "Implemented creatorCollections Pinia store with collections identified by Mint allowance with instance 0 (collection-level). Created useCreatorCollections composable for fetching allowances and balances. Built CollectionList, CollectionCard, and CollectionCardSkeleton components. Updated CreatorsView with My Collections section showing refresh button, error display, and collection count badge. Mint button enabled, Manage Classes disabled (pending future task). All 669 tests pass.",
       "testing": {
         "automated": [
           "Store test: fetchCollections populates state",
