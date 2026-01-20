@@ -6,8 +6,10 @@ import NFTGrid from '@/components/nfts/NFTGrid.vue'
 import CollectionFilter from '@/components/nfts/CollectionFilter.vue'
 import NFTSortDropdown from '@/components/nfts/NFTSortDropdown.vue'
 import TransferNFTModal from '@/components/nfts/TransferNFTModal.vue'
+import MintNFTModal from '@/components/nfts/MintNFTModal.vue'
 import { useNFTs } from '@/composables/useNFTs'
-import type { NFTDisplay } from '@shared/types/display'
+import { useNFTMintAuthority } from '@/composables/useNFTMintAuthority'
+import type { NFTDisplay, CollectionDisplay } from '@shared/types/display'
 
 const {
   nfts,
@@ -25,9 +27,15 @@ const {
   clearFilter,
 } = useNFTs()
 
+// NFT mint authority
+const { hasAnyMintAuthority } = useNFTMintAuthority()
+
 // Transfer modal state
 const transferModalOpen = ref(false)
 const selectedNFTForTransfer = ref<NFTDisplay | null>(null)
+
+// Mint modal state
+const mintModalOpen = ref(false)
 
 // Burn modal state (placeholder for future nft-burn task)
 // These variables will be used when BurnNFTModal is implemented
@@ -59,6 +67,20 @@ async function handleTransferSuccess(_nft: NFTDisplay): Promise<void> {
   await fetchAll()
 }
 
+// Mint modal handlers
+function handleMintOpen(): void {
+  mintModalOpen.value = true
+}
+
+function handleMintClose(): void {
+  mintModalOpen.value = false
+}
+
+async function handleMintSuccess(_collection: CollectionDisplay, _quantity: number): Promise<void> {
+  // Refresh NFT list after successful mint
+  await fetchAll()
+}
+
 function handleBurn(nft: NFTDisplay): void {
   _selectedNFTForBurn.value = nft
   _burnModalOpen.value = true
@@ -74,10 +96,23 @@ async function handleRefresh(): Promise<void> {
 <template>
   <div>
     <!-- Header -->
-    <PageHeader
-      title="NFTs"
-      description="View and manage your NFT collection."
-    />
+    <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
+      <PageHeader
+        title="NFTs"
+        description="View and manage your NFT collection."
+      />
+      <!-- Mint Button (shown when user has mint authority) -->
+      <button
+        v-if="isConnected && hasAnyMintAuthority"
+        class="btn-primary bg-green-600 hover:bg-green-700 flex items-center gap-2 shrink-0"
+        @click="handleMintOpen"
+      >
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+        </svg>
+        Mint NFT
+      </button>
+    </div>
 
     <!-- Not Connected State -->
     <EmptyState
@@ -215,6 +250,13 @@ async function handleRefresh(): Promise<void> {
       :open="transferModalOpen"
       @close="handleTransferClose"
       @success="handleTransferSuccess"
+    />
+
+    <!-- Mint NFT Modal -->
+    <MintNFTModal
+      :open="mintModalOpen"
+      @close="handleMintClose"
+      @success="handleMintSuccess"
     />
 
     <!-- Burn Modal Placeholder -->

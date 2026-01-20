@@ -236,3 +236,43 @@ Please test NFT transfer: complete a transfer and verify it leaves your wallet.
 7. Reject a transfer in MetaMask to verify error handling
 
 ---
+
+## nft-mint (Iteration 17)
+
+### Test Requirements
+Please test NFT minting with an authorized wallet. Verify new NFT appears in your collection.
+
+### Checklist
+- [ ] Mint NFT button only appears in NFTsView header when user has mint authority for any collection
+- [ ] Mint NFT modal opens when clicking the Mint NFT button
+- [ ] Collection selector shows all collections user can mint from
+- [ ] Collection selector disabled when only one collection available
+- [ ] Selected collection info displays correctly (name, type, collection path)
+- [ ] Mint allowance remaining displays correctly (green info box)
+- [ ] Quantity input starts at 1
+- [ ] Increment/decrement buttons work correctly
+- [ ] MAX button sets quantity to remaining allowance (capped at 100 for UI)
+- [ ] Quantity validation works (rejects zero, negative, fractional, exceeding allowance)
+- [ ] Continue button disabled until quantity is valid
+- [ ] Confirmation step shows mint summary (collection, quantity, recipient address)
+- [ ] Info notice about wallet signing and unique instance IDs displays
+- [ ] Back button returns to form with values preserved
+- [ ] Confirm Mint triggers MetaMask signature popup
+- [ ] Approving transaction completes mint, closes modal, refreshes NFT list
+- [ ] Rejecting transaction shows error message, keeps modal open
+- [ ] New NFT(s) appear in list after successful mint
+- [ ] Mint allowance decreases after successful mint
+
+### How to Test
+1. Start the dev server: `npm run dev`
+2. Connect a wallet that has mint authority for at least one NFT collection
+3. Navigate to the NFTs page
+4. Verify "Mint NFT" button appears in the header
+5. Click "Mint NFT" to open the modal
+6. If multiple collections authorized, test collection selector
+7. Test quantity controls (increment, decrement, max, manual input)
+8. Test form validation with invalid inputs
+9. Complete a mint and verify new NFT(s) appear in list
+10. Reject a mint in MetaMask to verify error handling
+
+---

@@ -728,8 +728,8 @@
         "Show minting progress indicator",
         "Refresh NFT list on success"
       ],
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "Implemented useNFTMintAuthority.ts composable for checking NFT mint allowances at collection level, useMintNFT.ts composable for mint operations, and MintNFTModal.vue with collection selector, quantity controls (increment/decrement/max), and two-step confirmation flow. Integrated into NFTsView.vue with Mint NFT button shown when user has mint authority. All 535 tests pass (509 client + 26 server).",
       "testing": {
         "automated": [
           "Unit test: useNFTMintAuthority returns correct collections",
