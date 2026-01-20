@@ -1,0 +1,657 @@
+{
+  "module": "GalaChain Command Center",
+  "version": "1.0.0",
+  "description": "Lightweight wallet-facing dApp for GalaChain token operations - fungible tokens, NFTs, and creator tools with wallet connection and transaction signing",
+  "created": "2026-01-20",
+  "stack": {
+    "backend": "NestJS + TypeScript (serves API + static Vue build)",
+    "frontend": "Vue 3 + Vite + TypeScript (builds to dist/client)",
+    "styling": "Tailwind CSS",
+    "stateManagement": "Pinia",
+    "walletConnection": "@gala-chain/connect",
+    "chainApi": "@gala-chain/api + @gala-chain/client",
+    "formValidation": "VeeValidate + zod",
+    "httpClient": "axios"
+  },
+  "projectStructure": {
+    "root": "command-center/",
+    "description": "Single package - NestJS serves Vue static build",
+    "folders": {
+      "src/": "NestJS backend source",
+      "client/": "Vue 3 frontend source",
+      "shared/": "Shared types and utilities (imported by both)",
+      "dist/": "NestJS compiled output",
+      "dist/client/": "Vue production build (served by NestJS)"
+    }
+  },
+  "dependencies": {
+    "root": [
+      "@nestjs/common",
+      "@nestjs/core",
+      "@nestjs/platform-express",
+      "@nestjs/config",
+      "@nestjs/serve-static",
+      "@gala-chain/api",
+      "@gala-chain/client",
+      "class-validator",
+      "class-transformer",
+      "bignumber.js"
+    ],
+    "client": [
+      "vue@^3.4",
+      "vue-router@^4",
+      "pinia@^2",
+      "@gala-chain/connect",
+      "@gala-chain/api",
+      "vee-validate@^4",
+      "@vee-validate/zod",
+      "zod",
+      "axios",
+      "bignumber.js",
+      "@vueuse/core"
+    ],
+    "devDependencies": [
+      "vite",
+      "@vitejs/plugin-vue",
+      "tailwindcss",
+      "autoprefixer",
+      "postcss",
+      "typescript",
+      "concurrently"
+    ]
+  },
+  "requirements": [
+    {
+      "category": "project-setup",
+      "description": "Initialize NestJS project with Vue client folder structure",
+      "steps": [
+        "Create NestJS project with CLI (nest new command-center --skip-git)",
+        "Create client/ folder for Vue frontend",
+        "Create shared/ folder for common types",
+        "Install @nestjs/serve-static for serving Vue build",
+        "Configure root package.json scripts for unified dev/build",
+        "Add script: dev - runs NestJS and Vite concurrently",
+        "Add script: build - builds Vue then NestJS",
+        "Add script: start:prod - runs compiled NestJS (serves everything)",
+        "Configure .gitignore for dist/, node_modules/, .env"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "category": "vue-client-setup",
+      "description": "Initialize Vue 3 frontend in client/ folder with Vite",
+      "steps": [
+        "Initialize Vite + Vue 3 + TypeScript in client/ folder",
+        "Install Vue Router for client-side routing",
+        "Install and configure Pinia for state management",
+        "Install and configure Tailwind CSS with GalaChain brand colors",
+        "Install @gala-chain/connect and @gala-chain/api packages",
+        "Install VeeValidate + @vee-validate/zod for form validation",
+        "Install @vueuse/core for Vue composition utilities",
+        "Install axios for HTTP requests to backend API",
+        "Configure vite.config.ts: output to ../dist/client, proxy /api to NestJS in dev",
+        "Create folder structure: src/views/, src/components/, src/composables/, src/stores/, src/lib/",
+        "Configure path alias @ pointing to client/src/"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "category": "nestjs-static-serving",
+      "description": "Configure NestJS to serve Vue static build and API routes",
+      "steps": [
+        "Install @nestjs/serve-static package",
+        "Configure ServeStaticModule in app.module.ts",
+        "Set rootPath to join(__dirname, 'client') for production",
+        "Configure exclude patterns for /api/* routes",
+        "Enable SPA fallback (serveRoot: '/', exclude: ['/api/*'])",
+        "Test that index.html serves for all non-API routes",
+        "Ensure API routes under /api prefix work correctly"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "category": "environment-configuration",
+      "description": "Environment variables for both NestJS and Vue client",
+      "steps": [
+        "Create .env file at project root for NestJS",
+        "Add GALACHAIN_ENV variable (production | stage)",
+        "Add GALACHAIN_GATEWAY_URL with defaults per environment",
+        "Add GALACHAIN_API_URL for REST API calls",
+        "Add PORT variable for server (default 3000)",
+        "Create client/.env for Vite (VITE_* prefixed variables)",
+        "Add VITE_API_BASE_URL (empty for same-origin, or full URL)",
+        "Create src/config/configuration.ts for NestJS ConfigService",
+        "Create client/src/lib/config.ts for Vue typed config",
+        "Create .env.example documenting all variables",
+        "Add environment validation on NestJS startup"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "category": "shared-types",
+      "description": "Create shared TypeScript types in shared/ folder",
+      "steps": [
+        "Create shared/types/galachain.ts re-exporting from @gala-chain/api",
+        "Re-export TokenClass, TokenInstance, TokenBalance, TokenAllowance",
+        "Re-export TransferTokenDto, MintTokenDto, BurnTokensDto",
+        "Create shared/types/wallet.ts with WalletState interface",
+        "Create shared/types/display.ts with UI display interfaces",
+        "Create FungibleTokenDisplay, NFTDisplay, CollectionDisplay interfaces",
+        "Create TransactionResult, AllowanceDisplay interfaces",
+        "Create shared/index.ts barrel file exporting all types",
+        "Configure tsconfig paths so both src/ and client/ can import from @shared/*"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "category": "nestjs-health-api",
+      "description": "Create minimal NestJS API with health check endpoint",
+      "steps": [
+        "Create src/modules/health/health.module.ts",
+        "Create src/modules/health/health.controller.ts",
+        "Implement GET /api/health returning { status: 'ok', timestamp }",
+        "Register HealthModule in AppModule",
+        "Configure global API prefix '/api' in main.ts",
+        "Set up CORS for development (allow localhost:5173)",
+        "Configure global validation pipe with class-validator",
+        "Add request logging middleware for development"
+      ],
+      "passes": false,
+      "notes": "Backend is minimal for MVP - most operations are client-side direct to GalaChain"
+    },
+    {
+      "category": "railway-deployment",
+      "description": "Configure project for simple Railway deployment",
+      "steps": [
+        "Create Procfile with: web: node dist/main.js",
+        "Ensure build script builds both Vue and NestJS in correct order",
+        "Add build script: cd client && npm run build && cd .. && nest build",
+        "Configure package.json engines: { node: '>=18' }",
+        "Add start:prod script: node dist/main.js",
+        "Create railway.json (optional) for build configuration",
+        "Test production build locally: npm run build && npm run start:prod",
+        "Document Railway deployment steps in README"
+      ],
+      "passes": false,
+      "notes": "Railway auto-detects Node.js, runs npm install, npm run build, npm start"
+    },
+    {
+      "category": "wallet-connection",
+      "description": "Implement wallet connection using @gala-chain/connect with MetaMask support",
+      "steps": [
+        "Create client/src/stores/wallet.ts Pinia store",
+        "Define state: connected, address, publicKey, isConnecting, error",
+        "Define actions: connect(), disconnect(), checkConnection()",
+        "Create client/src/composables/useWallet.ts wrapping BrowserConnectClient",
+        "Implement connect() with MetaMask popup handling",
+        "Implement disconnect() with state cleanup",
+        "Implement getAddress() to retrieve connected wallet address",
+        "Add wallet connection persistence to localStorage via @vueuse/core",
+        "Create auto-reconnect on app mount if previously connected",
+        "Create client/src/components/WalletConnect.vue button component",
+        "Show truncated address (0x123...abc) when connected",
+        "Add dropdown menu with disconnect option",
+        "Handle connection errors with user-friendly messages"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "category": "galachain-client",
+      "description": "Create GalaChain client composable for chaincode interactions",
+      "steps": [
+        "Create client/src/lib/galachainClient.ts with client initialization",
+        "Configure REST API client with environment-based URLs",
+        "Create client/src/composables/useGalaChain.ts for reactive client access",
+        "Implement evaluate() wrapper for read operations",
+        "Implement submit() wrapper for write operations (auto-signed)",
+        "Integrate with wallet store for automatic signature handling",
+        "Create client/src/lib/galachainErrors.ts for response error parsing",
+        "Map GalaChainResponse error codes to user-friendly messages",
+        "Add request/response logging in development mode",
+        "Export typed methods: fetchBalances, fetchAllowances, transfer, mint, burn"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "category": "layout-navigation",
+      "description": "Create app layout with Vue Router navigation between sections",
+      "steps": [
+        "Create client/src/router/index.ts with Vue Router setup",
+        "Configure routes: / (redirect to /tokens), /tokens, /nfts, /creators, /export",
+        "Create client/src/views/Layout.vue as root layout wrapper",
+        "Create client/src/components/AppNavigation.vue with tabs",
+        "Add navigation items: Tokens, NFTs, Creators, Export (coming soon badge)",
+        "Style navigation with Tailwind (sticky header, responsive)",
+        "Add active route indication with router-link-active class",
+        "Include WalletConnect.vue component in header right side",
+        "Create client/src/components/ui/PageHeader.vue for section titles",
+        "Create client/src/components/ui/LoadingSpinner.vue",
+        "Create client/src/components/ui/EmptyState.vue for empty lists"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "category": "fungible-tokens-list",
+      "description": "Implement fungible token list view with balances and allowances",
+      "steps": [
+        "Create client/src/views/TokensView.vue as main tokens page",
+        "Create client/src/stores/tokens.ts Pinia store",
+        "Define state: tokens[], allowances[], isLoading, error, sortBy",
+        "Define actions: fetchTokens(), fetchAllowances(), refresh(), setSort()",
+        "Create client/src/composables/useFungibleTokens.ts for data fetching",
+        "Query balances via GalaChain client (FetchBalances)",
+        "Query allowances via GalaChain client (FetchAllowances)",
+        "Create client/src/components/tokens/TokenList.vue displaying cards",
+        "Create client/src/components/tokens/TokenCard.vue with name, symbol, balance",
+        "Add action buttons: Transfer, Mint (if authorized), Burn (if authorized)",
+        "Create client/src/components/tokens/AllowanceList.vue showing spender + amount",
+        "Create client/src/components/tokens/SortDropdown.vue",
+        "Implement sorting: by balance (desc), alphabetical (asc)",
+        "Add loading skeleton with shimmer effect",
+        "Handle empty state when no tokens owned"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "category": "fungible-tokens-transfer",
+      "description": "Implement fungible token transfer functionality",
+      "steps": [
+        "Create client/src/components/tokens/TransferModal.vue dialog",
+        "Use native <dialog> element with Tailwind styling",
+        "Accept token prop to know which token is being transferred",
+        "Build form with VeeValidate: recipient address, amount inputs",
+        "Show current balance and max button",
+        "Create zod schema: valid address format, amount > 0, amount <= balance",
+        "Create client/src/composables/useTransferToken.ts for operation",
+        "Build TransferTokenDto with proper payload structure",
+        "Submit signed transaction via GalaChain client",
+        "Show loading spinner during transaction",
+        "Handle success: close modal, refresh balances, show success toast",
+        "Handle failure: display error message inline, keep modal open",
+        "Add confirmation step before final submit"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "category": "fungible-tokens-mint",
+      "description": "Implement fungible token mint functionality (authorization gated)",
+      "steps": [
+        "Create client/src/composables/useTokenAuthority.ts",
+        "Query if connected wallet has mint allowance for specific token",
+        "Return reactive isMintAuthorized, mintAllowanceRemaining",
+        "Conditionally render Mint button in TokenCard only when authorized",
+        "Create client/src/components/tokens/MintModal.vue dialog",
+        "Show token info and remaining mint allowance",
+        "Build form: quantity input with validation (positive, within allowance)",
+        "Create client/src/composables/useMintToken.ts for operation",
+        "Build MintTokenDto and submit signed transaction",
+        "Refresh balances and allowance on successful mint",
+        "Display updated remaining mint allowance"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "category": "fungible-tokens-burn",
+      "description": "Implement fungible token burn functionality (authorization gated)",
+      "steps": [
+        "Extend useTokenAuthority.ts to check burn authorization",
+        "Return reactive isBurnAuthorized",
+        "Conditionally render Burn button in TokenCard only when authorized",
+        "Create client/src/components/tokens/BurnModal.vue dialog",
+        "Show token info and current balance",
+        "Build form: quantity input with validation (positive, <= balance)",
+        "Add warning banner: 'This action is irreversible'",
+        "Add confirmation checkbox: 'I understand this cannot be undone'",
+        "Create client/src/composables/useBurnToken.ts for operation",
+        "Build BurnTokensDto and submit signed transaction",
+        "Refresh balances on successful burn"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "category": "nft-list",
+      "description": "Implement NFT list view with collection filtering",
+      "steps": [
+        "Create client/src/views/NFTsView.vue as main NFTs page",
+        "Create client/src/stores/nfts.ts Pinia store",
+        "Define state: nfts[], collections[], selectedCollection, isLoading, sortBy",
+        "Define actions: fetchNFTs(), setCollectionFilter(), clearFilter(), setSort()",
+        "Define getters: filteredNFTs (applies collection filter)",
+        "Create client/src/composables/useNFTs.ts for data fetching",
+        "Query NFTs via GalaChain client (FetchBalances with isNonFungible)",
+        "Extract unique collections from results for filter dropdown",
+        "Create client/src/components/nfts/NFTGrid.vue with responsive grid",
+        "Create client/src/components/nfts/NFTCard.vue with collection, tokenId, image",
+        "Add action buttons: Transfer, Burn (if authorized)",
+        "Create client/src/components/nfts/CollectionFilter.vue dropdown",
+        "Sync filter with URL query params (?collection=xyz) via vue-router",
+        "Create client/src/components/nfts/SortDropdown.vue",
+        "Implement sorting: by collection, by tokenId",
+        "Add loading skeleton grid",
+        "Handle empty state when no NFTs owned"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "category": "nft-transfer",
+      "description": "Implement NFT transfer functionality",
+      "steps": [
+        "Create client/src/components/nfts/TransferNFTModal.vue dialog",
+        "Accept nft prop to display which NFT is being transferred",
+        "Show NFT preview: image (if available), collection, tokenId",
+        "Build form: recipient address input with validation",
+        "Create zod schema: valid GalaChain address format",
+        "Create client/src/composables/useTransferNFT.ts for operation",
+        "Build TransferTokenDto for NFT (quantity: 1, specific tokenInstance)",
+        "Submit signed transaction via GalaChain client",
+        "Handle success: close modal, refresh NFT list, show success toast",
+        "Handle failure: display error message inline",
+        "Add confirmation step showing NFT details before transfer"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "category": "nft-mint",
+      "description": "Implement NFT mint functionality (authorization gated)",
+      "steps": [
+        "Create client/src/composables/useNFTMintAuthority.ts",
+        "Query mint allowance per collection for connected wallet",
+        "Return reactive authorizedCollections[], getMintAllowance(collection)",
+        "Add Mint NFT button to NFTsView header when user has any mint authority",
+        "Create client/src/components/nfts/MintNFTModal.vue dialog",
+        "Build form: select collection (from authorized), select class, quantity",
+        "Show remaining mint allowance for selected collection",
+        "Create client/src/composables/useMintNFT.ts for operation",
+        "Build appropriate DTO and submit signed transaction",
+        "Show minting progress indicator",
+        "Refresh NFT list on success"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "category": "nft-burn",
+      "description": "Implement NFT burn functionality (authorization gated)",
+      "steps": [
+        "Extend useNFTMintAuthority or create useNFTBurnAuthority.ts",
+        "Check burn authorization for connected wallet per NFT/collection",
+        "Conditionally show Burn button on NFTCard when authorized",
+        "Create client/src/components/nfts/BurnNFTModal.vue dialog",
+        "Show NFT preview being burned",
+        "Add prominent warning: 'This NFT will be permanently destroyed'",
+        "Add confirmation checkbox required to enable burn button",
+        "Create client/src/composables/useBurnNFT.ts for operation",
+        "Build BurnTokensDto for specific NFT instance",
+        "Submit signed transaction",
+        "Refresh NFT list on success"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "category": "creators-page",
+      "description": "Create Creators section with Pump interface entry point",
+      "steps": [
+        "Create client/src/views/CreatorsView.vue as main creators page",
+        "Create two sections: Pump Interface, NFT Collection Tools",
+        "Create client/src/components/creators/PumpEntry.vue prominent card",
+        "Add Pump description and eye-catching CTA button",
+        "Determine Pump URL/integration (external link for now)",
+        "Style Pump card as primary action with gradient or accent color",
+        "Show wallet connection prompt if not connected",
+        "Add visual divider between Pump and Collection tools sections"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "category": "creators-collections",
+      "description": "Implement NFT collection management for creators",
+      "steps": [
+        "Create client/src/stores/creatorCollections.ts Pinia store",
+        "Define state: collections[], isLoading, error",
+        "Define actions: fetchCollections(), refresh()",
+        "Create client/src/composables/useCreatorCollections.ts",
+        "Query collections where connected wallet has authority",
+        "Create client/src/components/creators/CollectionList.vue",
+        "Create client/src/components/creators/CollectionCard.vue",
+        "Show collection name, symbol, total supply, minted count",
+        "Show expandable/collapsible classes list under each collection",
+        "Add action buttons: Mint, Manage Classes",
+        "Add Create Collection CTA button at top",
+        "Handle empty state for users with no collections"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "category": "creators-create-collection",
+      "description": "Implement create/claim collection functionality",
+      "steps": [
+        "Create client/src/components/creators/CreateCollectionModal.vue",
+        "Build form: collection name, symbol, description",
+        "Add isNonFungible toggle (default true for NFT collections)",
+        "Add max supply input (optional, 0 = unlimited)",
+        "Create zod schema for validation",
+        "Create client/src/composables/useCreateCollection.ts",
+        "Build CreateTokenClassDto or appropriate DTO",
+        "Submit signed transaction to create collection",
+        "Handle success: refresh collections list, show success toast",
+        "Handle failure: display error message"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "category": "creators-manage-classes",
+      "description": "Implement class management within collections",
+      "steps": [
+        "Create client/src/components/creators/ClassList.vue",
+        "Create client/src/components/creators/ClassCard.vue",
+        "Show class name, max supply, minted count, properties",
+        "Create client/src/components/creators/CreateClassModal.vue",
+        "Build form with class parameters (name, maxSupply, etc.)",
+        "Create client/src/composables/useManageClasses.ts",
+        "Implement createClass() action",
+        "Submit signed transactions for class creation",
+        "Refresh class list on success"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "category": "creators-mint-from-collection",
+      "description": "Implement minting from owned collections/classes",
+      "steps": [
+        "Add Mint button to CollectionCard and ClassCard",
+        "Create client/src/components/creators/CollectionMintModal.vue",
+        "Accept collection (and optionally class) as props",
+        "Build form: select class (if not pre-selected), quantity input",
+        "Show remaining supply / mint allowance",
+        "Add metadata inputs if applicable (optional for MVP)",
+        "Create client/src/composables/useCollectionMint.ts",
+        "Validate against max supply and mint allowances",
+        "Submit signed mint transaction",
+        "Show minting progress indicator",
+        "Refresh collection stats on success"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "category": "toast-notifications",
+      "description": "Create toast notification system for transaction feedback",
+      "steps": [
+        "Create client/src/stores/toasts.ts Pinia store",
+        "Define state: toasts[] with id, type, message, duration",
+        "Define actions: addToast(), removeToast(), clearAll()",
+        "Create client/src/components/ui/Toast.vue single toast component",
+        "Style variants: success (green), error (red), pending (blue), info (gray)",
+        "Create client/src/components/ui/ToastContainer.vue",
+        "Position fixed bottom-right, stack toasts vertically",
+        "Add enter/leave transitions with Vue <Transition>",
+        "Auto-dismiss success/info toasts after 5 seconds",
+        "Keep error toasts until manually dismissed",
+        "Create client/src/composables/useToast.ts helper"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "category": "transaction-status",
+      "description": "Create transaction status tracking for pending operations",
+      "steps": [
+        "Create client/src/stores/transactions.ts Pinia store",
+        "Define state: pendingTxs[], recentTxs[] (last 10)",
+        "Define PendingTransaction type: id, type, status, timestamp, hash?",
+        "Define actions: addPending(), updateStatus(), markComplete(), markFailed()",
+        "Integrate with toast system to show transaction updates",
+        "Show transaction hash with link to GalaChain explorer on success",
+        "Create client/src/components/ui/TransactionIndicator.vue",
+        "Show pending transaction count in header (optional)"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "category": "error-handling",
+      "description": "Implement comprehensive error handling",
+      "steps": [
+        "Create shared/errors.ts with typed error classes",
+        "Define GalaChainError, WalletError, NetworkError, ValidationError",
+        "Create client/src/lib/errorHandler.ts",
+        "Map GalaChainResponse error codes to user-friendly messages",
+        "Handle wallet errors: user rejected, MetaMask not installed, wrong network",
+        "Handle transaction signing errors",
+        "Handle network/API errors with retry suggestions",
+        "Create client/src/components/ui/ErrorDisplay.vue for inline errors",
+        "Add Vue global error handler in main.ts (app.config.errorHandler)",
+        "Log errors to console in development mode"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "category": "responsive-design",
+      "description": "Ensure responsive design for mobile and desktop",
+      "steps": [
+        "Configure Tailwind breakpoints (sm:640, md:768, lg:1024, xl:1280)",
+        "Design mobile-first, enhance for larger screens",
+        "Navigation: hamburger menu on mobile, tabs on desktop",
+        "Create client/src/components/ui/MobileMenu.vue slide-out drawer",
+        "NFT grid: 1 col on mobile, 2 on sm, 3 on md, 4 on lg",
+        "Token list: full-width cards stacked on mobile",
+        "Modals: full-screen on mobile (h-screen), centered max-w-md on desktop",
+        "Ensure touch targets >= 44px (buttons, links, inputs)",
+        "Test horizontal scroll is prevented",
+        "Add safe-area padding for notched devices"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "category": "testing",
+      "description": "Add essential tests for critical functionality",
+      "steps": [
+        "Install and configure Vitest for client/ tests",
+        "Install @vue/test-utils for component testing",
+        "Create client/vitest.config.ts",
+        "Add unit tests for Pinia stores: wallet, tokens, nfts",
+        "Add unit tests for composables: useWallet, useGalaChain",
+        "Add component tests for WalletConnect.vue",
+        "Add component tests for TransferModal.vue",
+        "Mock @gala-chain packages in tests",
+        "Install and configure Jest for src/ (NestJS) tests",
+        "Add health controller test",
+        "Add npm script: test (runs both client and server tests)"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "category": "export-placeholder",
+      "description": "Add placeholder for future Export Wallet Activity feature",
+      "steps": [
+        "Create client/src/views/ExportView.vue with Coming Soon UI",
+        "Add Export tab to navigation with 'Coming Soon' badge",
+        "Create client/src/components/export/ExportComingSoon.vue",
+        "Show preview mockup of planned export functionality",
+        "List planned features: date range, FT/NFT filters, CSV download",
+        "Add email signup for notification when available (optional)",
+        "Style as grayed/muted compared to active features"
+      ],
+      "passes": false,
+      "notes": "This feature is marked as 'coming soon' in the PRD and is not part of MVP scope"
+    }
+  ],
+  "mvpChecklist": [
+    {
+      "item": "FT balances + allowances",
+      "category": "fungible-tokens-list",
+      "status": "pending"
+    },
+    {
+      "item": "FT transfer/mint/burn (mint/burn gated by authorization)",
+      "categories": ["fungible-tokens-transfer", "fungible-tokens-mint", "fungible-tokens-burn"],
+      "status": "pending"
+    },
+    {
+      "item": "NFT list + filter by collection",
+      "category": "nft-list",
+      "status": "pending"
+    },
+    {
+      "item": "NFT transfer/mint/burn (mint/burn gated by authorization)",
+      "categories": ["nft-transfer", "nft-mint", "nft-burn"],
+      "status": "pending"
+    },
+    {
+      "item": "Creators: Pump entry + NFT collection tooling",
+      "categories": ["creators-page", "creators-collections", "creators-create-collection", "creators-manage-classes", "creators-mint-from-collection"],
+      "status": "pending"
+    },
+    {
+      "item": "Paid async export that produces a clean CSV",
+      "category": "export-placeholder",
+      "status": "deferred",
+      "notes": "Coming soon - not MVP"
+    }
+  ],
+  "architectureNotes": {
+    "singlePackage": "One deployable unit. NestJS serves API at /api/* and Vue static build for all other routes. Simplifies Railway deployment.",
+    "buildProcess": "1) Vue builds to dist/client via Vite, 2) NestJS compiles to dist/, 3) NestJS ServeStaticModule serves dist/client/. Single 'npm run build' does both.",
+    "walletConnection": "Using @gala-chain/connect BrowserConnectClient for MetaMask. Wallet state in Pinia store with localStorage persistence via @vueuse/core useStorage.",
+    "transactionSigning": "All write operations auto-signed via connected wallet through @gala-chain/connect. SDK handles signature formatting (secp256k1, rsv format).",
+    "stateManagement": "Pinia stores: wallet, tokens, nfts, creatorCollections, transactions, toasts. Composables wrap store actions for component use.",
+    "apiDesign": "Frontend talks directly to GalaChain for most operations. NestJS /api routes reserved for future backend-required features (export job processing).",
+    "authorization": "Mint/burn buttons conditionally rendered via v-if based on wallet authority. Authority checked via GalaChain queries (FetchAllowances, token class authority).",
+    "railwayDeployment": "Railway auto-detects Node.js. Runs: npm install → npm run build → npm start. Single service, no config needed. Procfile optional."
+  },
+  "scripts": {
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "nest start --watch",
+    "dev:client": "cd client && vite",
+    "build": "npm run build:client && npm run build:server",
+    "build:client": "cd client && vite build",
+    "build:server": "nest build",
+    "start": "node dist/main.js",
+    "start:prod": "NODE_ENV=production node dist/main.js",
+    "test": "npm run test:client && npm run test:server",
+    "test:client": "cd client && vitest run",
+    "test:server": "jest"
+  }
+}
