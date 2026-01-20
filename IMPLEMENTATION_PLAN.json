@@ -1003,8 +1003,8 @@
         "Add Vue global error handler in main.ts (app.config.errorHandler)",
         "Log errors to console in development mode"
       ],
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "Implemented shared/errors.ts with typed error classes (AppError, GalaChainError, WalletError, NetworkError, ValidationError) and ErrorCode/ErrorSeverity enums. Created client/src/lib/errorHandler.ts with comprehensive error parsing for wallet, network, and GalaChain errors. Created ErrorDisplay.vue component with severity-based styling. Added Vue global error handler in main.ts. All 1154 tests pass (1094 client + 60 server).",
       "testing": {
         "automated": [
           "Unit test: error code mapping covers all codes",

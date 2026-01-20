@@ -8,3 +8,6 @@ export * from './types/galachain';
 
 // UI display interfaces
 export * from './types/display';
+
+// Error types
+export * from './errors';

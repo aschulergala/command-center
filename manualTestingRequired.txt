@@ -432,3 +432,30 @@ Please test minting from your collection. Verify the minted count updates correc
 8. Reject a mint in MetaMask to verify error handling
 
 ---
+
+## error-handling (Iteration 25)
+
+### Test Requirements
+Please test error scenarios: reject a transaction, disconnect network, and verify error messages are user-friendly.
+
+### Checklist
+- [ ] Reject transaction in MetaMask - verify user-friendly error message displays
+- [ ] Error message includes suggested action (e.g., "Please approve the transaction...")
+- [ ] Disconnect network - verify network error shown with retry suggestion
+- [ ] Test with MetaMask not installed - verify install prompt message
+- [ ] ErrorDisplay component shows correct severity styling (info/warning/error/critical)
+- [ ] Error messages in modals display inline with red styling
+- [ ] Global error handler catches unhandled errors (check console in dev mode)
+- [ ] Toast notifications appear for critical errors
+
+### How to Test
+1. Start the dev server: `npm run dev`
+2. Connect your wallet using the Connect Wallet button
+3. Navigate to the Tokens page
+4. Click "Transfer" on any token with a balance
+5. Fill in valid form data and click Continue
+6. When MetaMask popup appears, click Reject - verify error message is user-friendly
+7. Disable your network connection and try to refresh token list - verify network error
+8. Check browser console for logged errors in development mode
+
+---
