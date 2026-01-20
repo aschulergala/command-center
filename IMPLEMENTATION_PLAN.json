@@ -761,8 +761,8 @@
         "Submit signed transaction",
         "Refresh NFT list on success"
       ],
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "Implemented useBurnNFT.ts composable for burn operations (validates canBurn, isLocked, isInUse before burning), BurnNFTModal.vue with NFT preview, two-step confirmation flow, prominent warning banner, and confirmation checkbox. Red theme styling for burn UI. Integrated into NFTsView.vue. All 599 tests pass (573 client + 26 server).",
       "testing": {
         "automated": [
           "Component test: Burn button hidden when not authorized",

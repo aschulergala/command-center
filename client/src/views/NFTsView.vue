@@ -7,6 +7,7 @@ import CollectionFilter from '@/components/nfts/CollectionFilter.vue'
 import NFTSortDropdown from '@/components/nfts/NFTSortDropdown.vue'
 import TransferNFTModal from '@/components/nfts/TransferNFTModal.vue'
 import MintNFTModal from '@/components/nfts/MintNFTModal.vue'
+import BurnNFTModal from '@/components/nfts/BurnNFTModal.vue'
 import { useNFTs } from '@/composables/useNFTs'
 import { useNFTMintAuthority } from '@/composables/useNFTMintAuthority'
 import type { NFTDisplay, CollectionDisplay } from '@shared/types/display'
@@ -37,12 +38,9 @@ const selectedNFTForTransfer = ref<NFTDisplay | null>(null)
 // Mint modal state
 const mintModalOpen = ref(false)
 
-// Burn modal state (placeholder for future nft-burn task)
-// These variables will be used when BurnNFTModal is implemented
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const _burnModalOpen = ref(false)
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const _selectedNFTForBurn = ref<NFTDisplay | null>(null)
+// Burn modal state
+const burnModalOpen = ref(false)
+const selectedNFTForBurn = ref<NFTDisplay | null>(null)
 
 // Fetch NFTs on mount if connected
 onMounted(async () => {
@@ -82,10 +80,18 @@ async function handleMintSuccess(_collection: CollectionDisplay, _quantity: numb
 }
 
 function handleBurn(nft: NFTDisplay): void {
-  _selectedNFTForBurn.value = nft
-  _burnModalOpen.value = true
-  // Burn modal will be implemented in nft-burn task
-  console.log('Burn NFT:', nft.instanceKey)
+  selectedNFTForBurn.value = nft
+  burnModalOpen.value = true
+}
+
+function handleBurnClose(): void {
+  burnModalOpen.value = false
+  selectedNFTForBurn.value = null
+}
+
+async function handleBurnSuccess(_nft: NFTDisplay): Promise<void> {
+  // Refresh NFT list after successful burn
+  await fetchAll()
 }
 
 async function handleRefresh(): Promise<void> {
@@ -259,7 +265,12 @@ async function handleRefresh(): Promise<void> {
       @success="handleMintSuccess"
     />
 
-    <!-- Burn Modal Placeholder -->
-    <!-- TODO: Implement BurnNFTModal in nft-burn task -->
+    <!-- Burn NFT Modal -->
+    <BurnNFTModal
+      :nft="selectedNFTForBurn"
+      :open="burnModalOpen"
+      @close="handleBurnClose"
+      @success="handleBurnSuccess"
+    />
   </div>
 </template>

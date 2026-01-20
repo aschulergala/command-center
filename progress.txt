@@ -697,3 +697,96 @@
   - Check canTransfer flag on NFTDisplay before allowing transfer
   - GalaChain address validation requires hex-only after prefix (a-f, 0-9)
 ---
+
+## Iteration 17 - NFT Mint Functionality
+- What was implemented:
+  - Created client/src/composables/useNFTMintAuthority.ts for checking NFT mint allowances
+    - nftMintAllowances - filters allowances for Mint type with instance 0 (collection-level)
+    - authorizedCollections - returns collections user can mint from
+    - hasAnyMintAuthority - whether user can mint any NFTs
+    - getMintAllowance(), getMintAllowanceRemaining(), getMintAllowanceFormatted()
+    - canMintFromCollection(), getCollectionMintAuthority()
+    - isValidMintQuantity() - validates positive integer within allowance
+  - Created client/src/composables/useMintNFT.ts for mint operations
+    - executeMint() executes NFT mint via GalaChain mintToken
+    - buildTokenClassKey() builds token class key from CollectionDisplay
+    - Validates quantity is positive integer (NFTs can't be fractional)
+    - Returns mintedInstances array on success
+  - Created client/src/components/nfts/MintNFTModal.vue with:
+    - Collection selector (disabled when only one collection)
+    - Collection info display with image/placeholder
+    - Mint allowance info (green theme)
+    - Quantity input with increment/decrement/MAX buttons
+    - MAX capped at 100 for UI performance
+    - Two-step flow: form → confirmation
+    - Shows recipient address (connected wallet)
+    - Info notice about unique instance IDs
+    - Loading state during mint
+    - Error display inline
+  - Updated client/src/views/NFTsView.vue with:
+    - Mint NFT button in header (shown when hasAnyMintAuthority)
+    - MintNFTModal component integration
+    - Handlers for mint open/close/success
+    - Auto-refresh NFT list after successful mint
+- Files changed:
+  - client/src/composables/useNFTMintAuthority.ts (new)
+  - client/src/composables/useMintNFT.ts (new)
+  - client/src/components/nfts/MintNFTModal.vue (new)
+  - client/src/views/NFTsView.vue (updated)
+  - client/__tests__/composables/useNFTMintAuthority.spec.ts (new - 28 tests)
+  - client/__tests__/composables/useMintNFT.spec.ts (new - 16 tests)
+  - client/__tests__/components/nfts/MintNFTModal.spec.ts (new - 13 tests)
+  - IMPLEMENTATION_PLAN.json (updated)
+  - manualTestingRequired.txt (updated)
+- GalaChain tools used: Used /galachain:ask for NFT minting patterns
+- Tests: All 535 tests pass (509 client + 26 server)
+- Learnings for future iterations:
+  - NFT mint allowances have instance 0 (or empty) - applies to collection level
+  - NFT quantities must be positive integers (no fractional NFTs)
+  - parseInt truncates decimals so '3.5' becomes 3 - may want explicit validation
+  - Vue test mocking with ref/computed requires careful setup for reactivity
+  - Use ref exported from module scope for mutable mock data in component tests
+  - Collection selector disabled attribute test: check for presence not value
+---
+
+## Iteration 18 - NFT Burn Functionality
+- What was implemented:
+  - Created client/src/composables/useBurnNFT.ts for NFT burn operations
+    - executeBurn() executes NFT burn via GalaChain burnTokens with quantity '1'
+    - buildTokenInstance() builds token instance from NFTDisplay using specific instance ID
+    - canBurnNFT() validates: has burn authority (canBurn), not locked, not in use
+    - Reactive isBurning, isLoading, error states
+  - Created client/src/components/nfts/BurnNFTModal.vue with:
+    - NFT preview section (image/placeholder, name, collection, instance ID, rarity)
+    - Prominent warning banner: "This NFT will be permanently destroyed"
+    - Explanation that NFT cannot be recovered or recreated
+    - Confirmation checkbox required before continuing
+    - Two-step flow: form with checkbox → confirmation with final warning
+    - Yellow warning if NFT cannot be burned (locked/in use)
+    - Continue button disabled until checkbox checked AND canBurnNFT returns true
+    - Red theme styling for burn UI (consistent with fungible token burn)
+    - Loading state during burn execution
+    - Error display inline
+  - Updated client/src/views/NFTsView.vue with:
+    - Import and use of BurnNFTModal (replaced placeholder code)
+    - Handler functions for burn open/close/success
+    - Automatic NFT list refresh after successful burn
+  - Note: NFTCard already had burn button showing when canBurn is true (from nft-list task)
+  - Note: Burn authority (canBurn flag) already computed in nfts store (from nft-list task)
+- Files changed:
+  - client/src/composables/useBurnNFT.ts (new)
+  - client/src/components/nfts/BurnNFTModal.vue (new)
+  - client/src/views/NFTsView.vue (updated - integrated BurnNFTModal)
+  - client/__tests__/composables/useBurnNFT.spec.ts (new - 20 tests)
+  - client/__tests__/components/nfts/BurnNFTModal.spec.ts (new - 18 tests)
+  - IMPLEMENTATION_PLAN.json (updated)
+  - manualTestingRequired.txt (updated)
+- GalaChain tools used: None (used existing useGalaChain composable and burnTokens)
+- Tests: All 599 tests pass (573 client + 26 server)
+- Learnings for future iterations:
+  - NFT burn always uses quantity '1' - different from fungible tokens
+  - NFT burn validation should check canBurn flag, isLocked, and isInUse
+  - Reuse patterns from BurnModal.vue (fungible tokens) for consistent UX
+  - Store already computes canBurn from allowances - no need for separate authority composable
+  - Two-step confirmation flow (form → confirm) is important for destructive actions
+---
