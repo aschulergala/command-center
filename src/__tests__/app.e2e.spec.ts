@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
-import { AppController } from '../app.controller';
+import { HealthController } from '../modules/health/health.controller';
 
 /**
  * These tests verify:
@@ -12,12 +12,12 @@ import { AppController } from '../app.controller';
  * since ServeStaticModule path resolution differs between ts-jest and production.
  * Run `npm run build && npm start` to test static serving manually.
  */
-describe('App Controller (e2e)', () => {
+describe('Health Controller (e2e)', () => {
   let app: INestApplication;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      controllers: [AppController],
+      controllers: [HealthController],
     }).compile();
 
     app = moduleFixture.createNestApplication();

@@ -1,9 +1,10 @@
-import { Module } from '@nestjs/common';
+import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
-import { AppController } from './app.controller';
 import { SpaFallbackController } from './spa-fallback.controller';
+import { HealthModule } from './modules/health/health.module';
+import { RequestLoggerMiddleware } from './middleware/request-logger.middleware';
 import configuration from './config/configuration';
 
 @Module({
@@ -16,9 +17,17 @@ import configuration from './config/configuration';
       rootPath: join(__dirname, '..', 'client'),
       exclude: ['/api{/*path}'],
     }),
+    HealthModule,
   ],
   // SpaFallbackController must be LAST so API routes are resolved first
-  controllers: [AppController, SpaFallbackController],
+  controllers: [SpaFallbackController],
   providers: [],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    // Apply request logging middleware to all API routes in development
+    if (process.env.NODE_ENV !== 'production') {
+      consumer.apply(RequestLoggerMiddleware).forRoutes('*');
+    }
+  }
+}

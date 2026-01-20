@@ -9,6 +9,9 @@
 - path-to-regexp v8+ syntax: use '/api{/*path}' not '/api/(.*)'
 - Use SpaFallbackController with @Get('*path') for SPA fallback since ServeStaticModule doesn't handle it
 - __dirname resolves to src/ in dev and dist/src/ in production - use relative paths accordingly
+- vue-tsc with noUnusedLocals treats type imports as unused when used in interfaces - re-export to fix
+- Use `export type { }` for type-only re-exports with isolatedModules: true
+- @gala-chain/api UserAlias and UserRef are branded types (string & { __marker__: void })
 
 ---
 
@@ -141,5 +144,74 @@
   - Jest testRegex should include path prefix (src/) to avoid running client tests
   - Client config uses import.meta.env for Vite environment variables
   - Environment defaults should be based on GALACHAIN_ENV (production vs stage)
+---
+
+## Iteration 5 - shared-types
+- What was implemented:
+  - Created shared/types/galachain.ts re-exporting types from @gala-chain/api
+    - Core types: TokenClass, TokenClassKey, TokenInstance, TokenInstanceKey, TokenBalance, TokenAllowance
+    - DTOs: TransferTokenDto, MintTokenDto, BurnTokensDto, CreateTokenClassDto, etc.
+    - Response types: GalaChainResponse, GalaChainResponseType
+    - User types: UserAlias, UserRef with validation functions
+  - Updated shared/types/wallet.ts with comprehensive wallet state types
+    - WalletState interface with connected, address, publicKey, isConnecting, error
+    - WalletConnectionStatus enum
+    - WalletProvider enum
+    - WalletConnectionResult interface
+  - Created shared/types/display.ts with UI display interfaces
+    - FungibleTokenDisplay for fungible token cards
+    - NFTDisplay for NFT cards
+    - CollectionDisplay for NFT collections
+    - AllowanceDisplay for token allowances
+    - TransactionResult for transaction outcomes
+    - TransactionType and TransactionStatus enums
+    - PendingTransaction for tracking in-progress transactions
+  - Updated shared/index.ts to export all types
+  - Configured tsconfig paths for both server and client (@shared/*)
+  - Updated vite.config.ts with @shared alias
+  - Installed @gala-chain/api in root package
+- Files changed:
+  - shared/types/galachain.ts (new)
+  - shared/types/wallet.ts (updated)
+  - shared/types/display.ts (new)
+  - shared/index.ts (updated)
+  - client/tsconfig.json (updated - added @shared/* path and ../shared/**/*.ts to include)
+  - client/vite.config.ts (updated - added @shared alias)
+  - package.json (updated - added @gala-chain/api dependency)
+- GalaChain tools used: None (used direct inspection of @gala-chain/api type definitions)
+- Tests: All 37 tests pass (12 client + 25 server)
+- Learnings for future iterations:
+  - vue-tsc with noUnusedLocals: true treats type-only imports as unused even when used in interfaces
+  - Workaround: Re-export the imported types to mark them as "used"
+  - Use `export type { }` for type-only re-exports with isolatedModules: true
+  - UserAlias and UserRef are branded types (string & { __marker__: void })
+  - @gala-chain/api exports classes (TokenClass), interfaces (TokenClassKeyProperties), and enums (AllowanceType)
+---
+
+## Iteration 6 - nestjs-health-api
+- What was implemented:
+  - Created src/modules/health/health.module.ts for dedicated health module
+  - Created src/modules/health/health.controller.ts with GET /api/health endpoint
+  - Created src/middleware/request-logger.middleware.ts for development logging
+  - Updated app.module.ts to import HealthModule and configure RequestLoggerMiddleware
+  - Removed old app.controller.ts (health endpoint moved to HealthController)
+  - Created unit tests for HealthController in src/modules/health/__tests__/health.controller.spec.ts
+  - Updated e2e test to use HealthController
+- Files changed:
+  - src/modules/health/health.module.ts (new)
+  - src/modules/health/health.controller.ts (new)
+  - src/modules/health/__tests__/health.controller.spec.ts (new)
+  - src/middleware/request-logger.middleware.ts (new)
+  - src/app.module.ts (updated)
+  - src/__tests__/app.e2e.spec.ts (updated)
+  - src/app.controller.ts (deleted)
+  - src/__tests__/app.controller.spec.ts (deleted)
+- GalaChain tools used: None (infrastructure setup)
+- Tests: All 38 tests pass (12 client + 26 server)
+- Learnings for future iterations:
+  - NestJS modules keep code organized - one module per feature area
+  - Middleware configured via NestModule.configure() with MiddlewareConsumer
+  - Apply middleware conditionally based on NODE_ENV for dev-only features
+  - Use @Controller('health') prefix for nested routes under /api/health
 ---
 
