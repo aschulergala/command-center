@@ -948,8 +948,8 @@
         "Keep error toasts until manually dismissed",
         "Create client/src/composables/useToast.ts helper"
       ],
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "Implemented toasts Pinia store (client/src/stores/toasts.ts) with state, actions (addToast, removeToast, clearAll, updateToast), convenience methods (success, error, pending, info), and getters. Created Toast.vue with type-based styling (success/green, error/red, pending/blue, info/gray), auto-dismiss timer, dismiss button, and accessibility attributes. Created ToastContainer.vue with Teleport to body, TransitionGroup animations (slide in/out from right), and fixed bottom-right positioning. Created useToast.ts composable with convenience methods and transaction() helper for transaction workflows. Integrated ToastContainer into Layout.vue. All 972 tests pass (946 client + 26 server).",
       "testing": {
         "automated": [
           "Store test: addToast creates toast with id",

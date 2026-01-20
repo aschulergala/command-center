@@ -2,6 +2,7 @@
 import { RouterView } from 'vue-router'
 import AppNavigation from '@/components/AppNavigation.vue'
 import WalletConnect from '@/components/WalletConnect.vue'
+import ToastContainer from '@/components/ui/ToastContainer.vue'
 </script>
 
 <template>
@@ -58,5 +59,8 @@ import WalletConnect from '@/components/WalletConnect.vue'
         </p>
       </div>
     </footer>
+
+    <!-- Toast Notifications -->
+    <ToastContainer />
   </div>
 </template>
