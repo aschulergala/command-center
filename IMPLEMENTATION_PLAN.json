@@ -582,8 +582,8 @@
         "Refresh balances and allowance on successful mint",
         "Display updated remaining mint allowance"
       ],
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "Implemented useTokenAuthority.ts composable for checking mint/burn allowances, useMintToken.ts composable for mint operations, mintSchema.ts for validation, and MintModal.vue with two-step flow (form → confirmation). Green theme styling for mint UI. Integrated into TokensView.vue. All 294 client tests pass.",
       "testing": {
         "automated": [
           "Unit test: useTokenAuthority returns false when no allowance",

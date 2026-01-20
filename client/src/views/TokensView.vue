@@ -6,6 +6,7 @@ import TokenList from '@/components/tokens/TokenList.vue'
 import AllowanceList from '@/components/tokens/AllowanceList.vue'
 import SortDropdown from '@/components/tokens/SortDropdown.vue'
 import TransferModal from '@/components/tokens/TransferModal.vue'
+import MintModal from '@/components/tokens/MintModal.vue'
 import { useFungibleTokens } from '@/composables/useFungibleTokens'
 import type { FungibleTokenDisplay } from '@shared/types/display'
 
@@ -27,6 +28,10 @@ const showAllowances = ref(false)
 // Transfer modal state
 const transferModalOpen = ref(false)
 const selectedTokenForTransfer = ref<FungibleTokenDisplay | null>(null)
+
+// Mint modal state
+const mintModalOpen = ref(false)
+const selectedTokenForMint = ref<FungibleTokenDisplay | null>(null)
 
 // Fetch tokens on mount if connected
 onMounted(async () => {
@@ -53,8 +58,19 @@ async function handleTransferSuccess(token: FungibleTokenDisplay): Promise<void>
 }
 
 function handleMint(token: FungibleTokenDisplay): void {
-  // TODO: Open mint modal
-  console.log('Mint token:', token.tokenKey)
+  selectedTokenForMint.value = token
+  mintModalOpen.value = true
+}
+
+function handleCloseMintModal(): void {
+  mintModalOpen.value = false
+  selectedTokenForMint.value = null
+}
+
+async function handleMintSuccess(token: FungibleTokenDisplay): Promise<void> {
+  // Refresh token balances and allowances after successful mint
+  await fetchAll()
+  console.log('Mint successful for token:', token.tokenKey)
 }
 
 function handleBurn(token: FungibleTokenDisplay): void {
@@ -212,6 +228,14 @@ async function handleRefresh(): Promise<void> {
       :open="transferModalOpen"
       @close="handleCloseTransferModal"
       @success="handleTransferSuccess"
+    />
+
+    <!-- Mint Modal -->
+    <MintModal
+      :token="selectedTokenForMint"
+      :open="mintModalOpen"
+      @close="handleCloseMintModal"
+      @success="handleMintSuccess"
     />
   </div>
 </template>

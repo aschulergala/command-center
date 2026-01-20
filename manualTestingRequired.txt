@@ -101,3 +101,37 @@ Please test token transfer: complete a transfer, reject one in MetaMask, and try
 7. Reject a transfer in MetaMask to verify error handling
 
 ---
+
+## fungible-tokens-mint (Iteration 13)
+
+### Test Requirements
+Please test token minting with an authorized wallet. Verify balance and allowance update correctly.
+
+### Checklist
+- [ ] Mint button only appears on tokens where user has mint authority
+- [ ] Mint modal opens when clicking Mint button on TokenCard
+- [ ] Token info displays correctly in modal (name, symbol, current balance)
+- [ ] Mint allowance remaining displays correctly (green info box)
+- [ ] Amount validation works (rejects zero, negative, exceeding allowance)
+- [ ] MAX button sets amount to full mint allowance
+- [ ] Continue button disabled until form is valid
+- [ ] Confirmation step shows mint summary (token, amount, recipient)
+- [ ] Info notice about wallet signing displays
+- [ ] Back button returns to form with values preserved
+- [ ] Confirm Mint triggers MetaMask signature popup
+- [ ] Approving transaction completes mint, closes modal, refreshes balances
+- [ ] Rejecting transaction shows error message, keeps modal open
+- [ ] Balance increases after successful mint
+- [ ] Mint allowance decreases after successful mint
+
+### How to Test
+1. Start the dev server: `npm run dev`
+2. Connect a wallet that has mint authority for at least one token
+3. Navigate to the Tokens page
+4. Verify "Mint" badge appears on authorized tokens
+5. Click "Mint" on an authorized token
+6. Test form validation with invalid inputs
+7. Complete a mint and verify balance/allowance updates
+8. Reject a mint in MetaMask to verify error handling
+
+---

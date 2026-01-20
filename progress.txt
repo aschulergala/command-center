@@ -489,3 +489,55 @@
   - Two-step form flow (form → confirmation) improves UX for irreversible actions
 ---
 
+## Iteration 13 - fungible-tokens-mint
+- What was implemented:
+  - Created client/src/composables/useTokenAuthority.ts for checking mint/burn allowances
+    - hasMintAuthority(), hasBurnAuthority(), getMintAllowance(), getBurnAllowance()
+    - getMintAllowanceRemaining() returns BigNumber of remaining allowance
+    - getTokenAuthority() returns comprehensive authority info
+    - isValidMintAmount(), isValidBurnAmount() for validation
+    - Computed mintableTokens and burnableTokens lists
+  - Created client/src/composables/useMintToken.ts for mint operations
+    - executeMint() to execute mint via GalaChain
+    - buildTokenClassKey() to build token class key from display object
+    - Reactive isMinting, isLoading, error states
+  - Created client/src/lib/schemas/mintSchema.ts for validation
+    - isValidMintAmount() validates positive finite numbers
+    - isWithinMintAllowance() validates against allowance
+    - createMintSchema() factory for VeeValidate + zod
+    - formatMintAmount() for display formatting
+  - Created client/src/components/tokens/MintModal.vue
+    - Native <dialog> element with Tailwind styling
+    - VeeValidate + @vee-validate/zod form validation
+    - Token info display with current balance
+    - Mint allowance info with green theme styling
+    - Amount input with MAX button
+    - Two-step flow: form → confirmation
+    - Confirmation step shows mint summary and info notice
+    - Loading spinner during mint execution
+    - Error display for failed mints
+  - Integrated MintModal into TokensView.vue
+    - Opens when Mint button clicked on TokenCard
+    - Refreshes token list on successful mint
+- Files changed:
+  - client/src/composables/useTokenAuthority.ts (new)
+  - client/src/composables/useMintToken.ts (new)
+  - client/src/lib/schemas/mintSchema.ts (new)
+  - client/src/components/tokens/MintModal.vue (new)
+  - client/src/views/TokensView.vue (updated - integrated MintModal)
+  - client/__tests__/composables/useTokenAuthority.spec.ts (new - 31 tests)
+  - client/__tests__/composables/useMintToken.spec.ts (new - 15 tests)
+  - client/__tests__/lib/schemas/mintSchema.spec.ts (new - 26 tests)
+  - client/__tests__/components/tokens/MintModal.spec.ts (new - 24 tests)
+  - IMPLEMENTATION_PLAN.json (updated)
+  - manualTestingRequired.txt (updated)
+- GalaChain tools used: None (used existing useGalaChain composable)
+- Tests: All 320 tests pass (294 client + 26 server)
+- Learnings for future iterations:
+  - BigNumber.isPositive() returns true for 0, use isGreaterThan(0) to exclude zero
+  - BigNumber.isFinite() should be used to reject Infinity values in validation
+  - Green theme for mint UI distinguishes from transfer/burn actions
+  - VeeValidate form validation is async - component tests need careful handling
+  - Reuse patterns from TransferModal for consistent UX across modals
+---
+
