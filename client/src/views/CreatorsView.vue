@@ -1,10 +1,27 @@
 <script setup lang="ts">
-// Creators view - will be implemented in creators-page task
+import PageHeader from '@/components/ui/PageHeader.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
+import { useWallet } from '@/composables/useWallet'
+
+const { connected } = useWallet()
 </script>
 
 <template>
-  <div class="p-6">
-    <h1 class="text-2xl font-bold text-gray-900">Creators</h1>
-    <p class="mt-2 text-gray-600">Create and manage your token collections.</p>
+  <div>
+    <PageHeader
+      title="Creators"
+      description="Create and manage your token collections."
+    />
+
+    <!-- Content will be implemented in creators-page task -->
+    <EmptyState
+      v-if="!connected"
+      title="Connect Your Wallet"
+      description="Connect your wallet to access creator tools and manage your collections."
+      icon="collections"
+    />
+    <div v-else class="card">
+      <p class="text-gray-500">Creator tools will be implemented in a future iteration.</p>
+    </div>
   </div>
 </template>

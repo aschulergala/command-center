@@ -16,6 +16,10 @@
 - BrowserConnectClient from @gala-chain/connect: use on/off for event listeners, connect() returns galaChainAddress
 - Mock BrowserConnectClient in tests by creating a class with the same interface, not just an object
 - vitest.config.ts needs @shared alias for shared types imports in tests
+- @gala-chain/connect TokenApi class is the correct API for token operations (NOT BrowserConnectClient.evaluate/submit)
+- TokenApi methods return { Data: T } - always extract response.Data
+- Submit DTOs require uniqueKey field - generate unique key with crypto.getRandomValues + base64
+- GalaChainResponseError: Error is string key, Message is user message, ErrorCode is number
 
 ---
 
@@ -281,5 +285,97 @@
   - Mock BrowserConnectClient in tests as a class, not just an object literal
   - Use mockReturnThis() for chainable methods like on() and off()
   - @pinia/testing createTestingPinia() allows setting initialState for component tests
+---
+
+## Iteration 9 - galachain-client
+- What was implemented:
+  - Created client/src/lib/galachainErrors.ts with:
+    - GalaChainError class with code, errorKey, errorPayload properties
+    - GALACHAIN_ERROR_MAP mapping error codes (INSUFFICIENT_BALANCE, etc.) to user-friendly messages
+    - extractError() to get message from GalaChainResponse
+    - parseWalletError() to parse MetaMask/wallet errors
+    - logError() for development logging with error codes
+  - Created client/src/lib/galachainClient.ts with:
+    - TokenApi wrapper functions using @gala-chain/connect
+    - getTokenApiUrl() for environment-based API URLs
+    - createTokenApi() factory function
+    - fetchBalances() - query token balances for an address
+    - fetchAllowances() - query token allowances
+    - transfer() - transfer tokens with auto-signing
+    - mint() - mint tokens (requires authority)
+    - burn() - burn tokens (requires authority)
+    - generateUniqueKey() for submit DTO uniqueness
+    - executeApiCall() wrapper with error handling
+    - Request/response logging in development mode
+  - Created client/src/composables/useGalaChain.ts with:
+    - Reactive state: isLoading, error
+    - Computed: isConnected, walletAddress, config
+    - Actions: getBalances, getAllowances, transferToken, mintToken, burnTokens
+    - Integration with wallet store via requireClient()
+    - OperationResult<T> return type for success/error handling
+  - Added comprehensive tests (34 error tests, 12 client tests, 14 composable tests)
+- Files changed:
+  - client/src/lib/galachainErrors.ts (new)
+  - client/src/lib/galachainClient.ts (new)
+  - client/src/composables/useGalaChain.ts (new)
+  - client/__tests__/lib/galachainErrors.spec.ts (new)
+  - client/__tests__/lib/galachainClient.spec.ts (new)
+  - client/__tests__/composables/useGalaChain.spec.ts (new)
+  - IMPLEMENTATION_PLAN.json (updated)
+  - manualTestingRequired.txt (updated)
+- GalaChain tools used: Inspected @gala-chain/connect TokenApi and BrowserConnectClient type definitions
+- Tests: All 96 tests pass (70 client + 26 server)
+- Learnings for future iterations:
+  - @gala-chain/connect uses TokenApi class for token operations, NOT direct evaluate/submit on BrowserConnectClient
+  - TokenApi constructor takes (apiUrl, client) and provides typed methods: FetchBalances, TransferToken, MintToken, BurnTokens, etc.
+  - Submit DTOs require a uniqueKey field - generate with crypto.getRandomValues + base64 encoding
+  - UserRef from @gala-chain/api is a branded type - cast strings with `as UserRef`
+  - GalaChainResponseError has Error (string key), Message (user message), ErrorCode (number)
+  - FetchAllowances returns { results: TokenAllowance[] } wrapped in Data property
+  - Mock TokenApi in tests rather than BrowserConnectClient methods
+  - Return type is { Data: T } from API calls - extract via response.Data
+---
+
+## Iteration 10 - layout-navigation
+- What was implemented:
+  - Created client/src/views/Layout.vue as root layout wrapper with:
+    - Sticky header with logo/brand, navigation, and WalletConnect
+    - Mobile menu button (hamburger)
+    - Mobile navigation (horizontal scrollable)
+    - Main content area with max-width container
+    - Footer with copyright
+  - Created client/src/components/AppNavigation.vue with:
+    - Desktop tabs with icons and active state indication
+    - Mobile horizontal scroll navigation
+    - "Coming Soon" badge on Export tab
+    - Proper aria-label for accessibility
+  - Created client/src/components/ui/PageHeader.vue for section titles
+  - Created client/src/components/ui/LoadingSpinner.vue with size variants (sm/md/lg)
+  - Created client/src/components/ui/EmptyState.vue with icon variants (tokens/nfts/collections/search/error)
+  - Updated router to use Layout as parent with nested children routes
+  - Updated view files (TokensView, NFTsView, CreatorsView, ExportView) to use PageHeader and EmptyState
+  - Added comprehensive component tests (9 navigation + 6 PageHeader + 8 LoadingSpinner + 15 EmptyState)
+- Files changed:
+  - client/src/views/Layout.vue (new)
+  - client/src/components/AppNavigation.vue (new)
+  - client/src/components/ui/PageHeader.vue (new)
+  - client/src/components/ui/LoadingSpinner.vue (new)
+  - client/src/components/ui/EmptyState.vue (new)
+  - client/src/router/index.ts (updated - nested routes under Layout)
+  - client/src/views/TokensView.vue (updated - uses PageHeader and EmptyState)
+  - client/src/views/NFTsView.vue (updated - uses PageHeader and EmptyState)
+  - client/src/views/CreatorsView.vue (updated - uses PageHeader and EmptyState)
+  - client/src/views/ExportView.vue (updated - uses PageHeader with Coming Soon UI)
+  - client/__tests__/components/AppNavigation.spec.ts (new)
+  - client/__tests__/components/ui/PageHeader.spec.ts (new)
+  - client/__tests__/components/ui/LoadingSpinner.spec.ts (new)
+  - client/__tests__/components/ui/EmptyState.spec.ts (new)
+- GalaChain tools used: None (UI/layout task)
+- Tests: All 160 tests pass (134 client + 26 server)
+- Learnings for future iterations:
+  - Vue Router nested routes: use parent component with <RouterView /> to wrap children
+  - Router navigation in tests doesn't trigger immediately - test hrefs instead for simplicity
+  - Tailwind scrollbar-hide class requires custom CSS for cross-browser support
+  - DefineProps with optional boolean creates reactive prop with undefined default
 ---
 
