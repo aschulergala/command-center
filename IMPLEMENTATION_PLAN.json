@@ -405,8 +405,8 @@
         "Add dropdown menu with disconnect option",
         "Handle connection errors with user-friendly messages"
       ],
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "Implemented wallet store (client/src/stores/wallet.ts), useWallet composable (client/src/composables/useWallet.ts), and WalletConnect.vue component. Uses @gala-chain/connect BrowserConnectClient with MetaMask support. Auto-reconnect via @vueuse/core useStorage. All 14 store tests and 10 component tests pass.",
       "testing": {
         "automated": [
           "Store test: connect() sets isConnecting then connected",

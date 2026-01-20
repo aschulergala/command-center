@@ -13,6 +13,9 @@
 - vue-tsc with noUnusedLocals treats type imports as unused when used in interfaces - re-export to fix
 - Use `export type { }` for type-only re-exports with isolatedModules: true
 - @gala-chain/api UserAlias and UserRef are branded types (string & { __marker__: void })
+- BrowserConnectClient from @gala-chain/connect: use on/off for event listeners, connect() returns galaChainAddress
+- Mock BrowserConnectClient in tests by creating a class with the same interface, not just an object
+- vitest.config.ts needs @shared alias for shared types imports in tests
 
 ---
 
@@ -243,5 +246,40 @@
   - In middleware, use req.originalUrl instead of req.path for accurate route detection
   - Windows doesn't support NODE_ENV=value prefix - Railway/Linux will set it automatically
   - Middleware runs BEFORE controllers - order registration carefully
+---
+
+## Iteration 8 - wallet-connection
+- What was implemented:
+  - Created client/src/stores/wallet.ts Pinia store with:
+    - State: connected, address, publicKey, isConnecting, error
+    - Actions: connect(), disconnect(), checkConnection(), getClient(), clearError()
+    - Getters: status, truncatedAddress, state
+    - Uses @gala-chain/connect BrowserConnectClient for MetaMask integration
+    - Uses @vueuse/core useStorage for localStorage persistence (auto-reconnect)
+  - Created client/src/composables/useWallet.ts wrapping store for component use
+  - Created client/src/components/WalletConnect.vue with:
+    - "Connect Wallet" button with loading state
+    - Truncated address display when connected with green indicator
+    - Dropdown menu with disconnect option
+    - Error message display with dismiss button
+    - Auto-reconnect on mount via checkConnection()
+  - Added comprehensive tests (14 store tests, 10 component tests)
+- Files changed:
+  - client/src/stores/wallet.ts (new)
+  - client/src/composables/useWallet.ts (new)
+  - client/src/components/WalletConnect.vue (new)
+  - client/__tests__/stores/wallet.spec.ts (new)
+  - client/__tests__/components/WalletConnect.spec.ts (new)
+  - client/vitest.config.ts (updated - added @shared alias)
+  - manualTestingRequired.txt (new - tracks manual testing checklist)
+- GalaChain tools used: Inspected @gala-chain/connect type definitions for BrowserConnectClient API
+- Tests: All 62 tests pass (36 client + 26 server)
+- Learnings for future iterations:
+  - BrowserConnectClient.connect() returns the galaChain address directly
+  - BrowserConnectClient provides on/off methods for event listeners (accountsChanged)
+  - Use getPublicKey() after connect() to retrieve the public key
+  - Mock BrowserConnectClient in tests as a class, not just an object literal
+  - Use mockReturnThis() for chainable methods like on() and off()
+  - @pinia/testing createTestingPinia() allows setting initialState for component tests
 ---
 
