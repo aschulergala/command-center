@@ -4,11 +4,13 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { AppController } from './app.controller';
 import { SpaFallbackController } from './spa-fallback.controller';
+import configuration from './config/configuration';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      load: [configuration],
     }),
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'client'),

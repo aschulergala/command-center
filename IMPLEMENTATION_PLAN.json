@@ -319,8 +319,8 @@
         "Create .env.example documenting all variables",
         "Add environment validation on NestJS startup"
       ],
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "Created .env and .env.example files, src/config/configuration.ts with environment validation, updated client/src/lib/config.ts with GalaChain config. 25 server tests + 12 client tests pass.",
       "testing": {
         "automated": ["Unit test: config validation rejects invalid values", "Unit test: config returns correct defaults"],
         "manual": []

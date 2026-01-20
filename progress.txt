@@ -109,3 +109,37 @@
   - Jest forceExit: true helps with child process cleanup
 ---
 
+## Iteration 4 - environment-configuration
+- What was implemented:
+  - Created .env file at project root for NestJS with PORT, GALACHAIN_ENV, GALACHAIN_GATEWAY_URL, GALACHAIN_API_URL
+  - Created .env.example documenting all variables for both server and client
+  - Updated client/.env with VITE_GALACHAIN_ENV, VITE_GALACHAIN_GATEWAY_URL, VITE_GALACHAIN_API_URL
+  - Created src/config/configuration.ts with typed AppConfiguration and validation
+  - Updated app.module.ts to use ConfigModule.forRoot with load: [configuration]
+  - Updated client/src/lib/config.ts with GalaChainConfig type and environment-based defaults
+  - Created src/__tests__/configuration.spec.ts with comprehensive validation tests
+  - Created client/vitest.config.ts and client/__tests__/config.spec.ts for client config tests
+  - Added jsdom to client devDependencies for Vitest
+  - Updated jest.config.js to exclude client/ tests (run by Vitest instead)
+- Files changed:
+  - .env (new)
+  - .env.example (new)
+  - client/.env (updated)
+  - src/config/configuration.ts (new)
+  - src/app.module.ts (updated)
+  - client/src/lib/config.ts (updated)
+  - src/__tests__/configuration.spec.ts (new)
+  - client/vitest.config.ts (new)
+  - client/__tests__/config.spec.ts (new)
+  - client/package.json (added jsdom)
+  - jest.config.js (updated)
+- GalaChain tools used: None (configuration setup)
+- Tests: 37 total tests pass (25 server + 12 client)
+- Learnings for future iterations:
+  - NestJS ConfigModule.forRoot accepts load: [configFn] for custom configuration factories
+  - Vitest needs jsdom for DOM environment in tests
+  - Jest testRegex should include path prefix (src/) to avoid running client tests
+  - Client config uses import.meta.env for Vite environment variables
+  - Environment defaults should be based on GALACHAIN_ENV (production vs stage)
+---
+

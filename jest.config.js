@@ -1,7 +1,8 @@
 module.exports = {
   moduleFileExtensions: ['js', 'json', 'ts'],
   rootDir: '.',
-  testRegex: '.*\\.spec\\.ts$',
+  testRegex: 'src/.*\\.spec\\.ts$',
+  testPathIgnorePatterns: ['/node_modules/', '/client/'],
   transform: {
     '^.+\\.(t|j)s$': 'ts-jest',
   },
