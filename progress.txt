@@ -6,6 +6,9 @@
 - Use @nestjs/serve-static to serve Vue build from dist/client
 - TypeScript paths configured for @shared/* imports
 - nest-cli.json required for nest build command
+- path-to-regexp v8+ syntax: use '/api{/*path}' not '/api/(.*)'
+- Use SpaFallbackController with @Get('*path') for SPA fallback since ServeStaticModule doesn't handle it
+- __dirname resolves to src/ in dev and dist/src/ in production - use relative paths accordingly
 
 ---
 
@@ -75,5 +78,34 @@
   - Custom component classes (btn-primary, card, input) available in style.css
   - Path alias @ maps to client/src/ for clean imports
   - Pinia v3 used with Vue 3.5+
+---
+
+## Iteration 3 - nestjs-static-serving
+- What was implemented:
+  - Configured ServeStaticModule in app.module.ts to serve Vue build from dist/client
+  - Created SpaFallbackController with wildcard route for SPA fallback
+  - Fixed exclude pattern for new path-to-regexp syntax: '/api{/*path}'
+  - Created AppController with health endpoint at GET /api/health
+  - Set up Jest with ts-jest for server tests
+  - Created unit tests for AppController
+  - Created integration tests for static serving (spawns actual server process)
+- Files changed:
+  - src/app.module.ts (updated)
+  - src/app.controller.ts (new)
+  - src/spa-fallback.controller.ts (new)
+  - src/__tests__/app.controller.spec.ts (new)
+  - src/__tests__/app.e2e.spec.ts (new)
+  - src/__tests__/static-serving.integration.spec.ts (new)
+  - jest.config.js (new)
+  - package.json (added Jest dependencies)
+- GalaChain tools used: None (infrastructure setup)
+- Tests: All 8 tests pass (3 unit, 1 e2e, 4 integration)
+- Learnings for future iterations:
+  - path-to-regexp v8+ syntax changed: use '/api{/*path}' instead of '/api/(.*)'
+  - __dirname in NestJS changes between dev (src/) and production (dist/src/)
+  - Use join(__dirname, '..', 'client') to resolve correctly in both contexts
+  - ServeStaticModule doesn't have built-in SPA fallback - use a wildcard controller
+  - Integration tests can spawn the actual server to test production behavior
+  - Jest forceExit: true helps with child process cleanup
 ---
 

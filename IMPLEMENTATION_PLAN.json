@@ -296,8 +296,8 @@
         "Test that index.html serves for all non-API routes",
         "Ensure API routes under /api prefix work correctly"
       ],
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "Configured ServeStaticModule with SPA fallback via SpaFallbackController. API routes excluded with /api{/*path} pattern. Integration tests verify static serving and SPA routes.",
       "testing": {
         "automated": ["Jest test: API routes return expected responses", "Integration: SPA routes serve index.html"],
         "manual": ["Verify production build serves correctly in browser"]
