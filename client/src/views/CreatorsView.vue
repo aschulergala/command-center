@@ -9,6 +9,7 @@ import EmptyState from '@/components/ui/EmptyState.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import PumpEntry from '@/components/creators/PumpEntry.vue'
 import CollectionList from '@/components/creators/CollectionList.vue'
+import CreateCollectionModal from '@/components/creators/CreateCollectionModal.vue'
 import { useWallet } from '@/composables/useWallet'
 import { useCreatorCollections } from '@/composables/useCreatorCollections'
 import type { CreatorCollectionDisplay } from '@/stores/creatorCollections'
@@ -28,6 +29,9 @@ const {
 // Track if initial fetch has happened
 const hasFetched = ref(false)
 
+// Modal states
+const showCreateCollectionModal = ref(false)
+
 // Fetch collections on mount if connected
 onMounted(async () => {
   if (connected.value) {
@@ -40,6 +44,29 @@ onMounted(async () => {
  * Handle refresh button click
  */
 async function handleRefresh() {
+  await refresh(true)
+}
+
+/**
+ * Open create collection modal
+ */
+function openCreateCollectionModal() {
+  showCreateCollectionModal.value = true
+}
+
+/**
+ * Close create collection modal
+ */
+function closeCreateCollectionModal() {
+  showCreateCollectionModal.value = false
+}
+
+/**
+ * Handle successful collection creation
+ */
+async function handleCollectionCreated() {
+  showCreateCollectionModal.value = false
+  // Refresh collections to show the new one
   await refresh(true)
 }
 
@@ -117,9 +144,8 @@ function handleToggleExpand(collectionKey: string) {
                   Start a new NFT collection with custom name, symbol, and properties.
                 </p>
                 <button
-                  class="btn-secondary text-sm"
-                  disabled
-                  title="Coming in creators-create-collection task"
+                  class="btn-primary text-sm"
+                  @click="openCreateCollectionModal"
                 >
                   <span class="flex items-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -219,6 +245,13 @@ function handleToggleExpand(collectionKey: string) {
           />
         </div>
       </section>
+
+      <!-- Create Collection Modal -->
+      <CreateCollectionModal
+        :open="showCreateCollectionModal"
+        @close="closeCreateCollectionModal"
+        @success="handleCollectionCreated"
+      />
     </template>
   </div>
 </template>

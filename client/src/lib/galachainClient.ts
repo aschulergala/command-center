@@ -8,7 +8,7 @@
  */
 
 import { BrowserConnectClient, TokenApi, GalaChainResponseError } from '@gala-chain/connect'
-import type { TokenBalance, TokenInstanceKey, TokenClassKey } from '@gala-chain/connect'
+import type { TokenBalance, TokenInstanceKey, TokenClassKey, TokenClass } from '@gala-chain/connect'
 import type { TokenAllowance, FetchAllowancesResponse, UserRef } from '@gala-chain/api'
 import BigNumber from 'bignumber.js'
 import { config } from './config'
@@ -293,6 +293,85 @@ export async function burn(
 }
 
 // ============================================================================
+// Token Class Operations
+// ============================================================================
+
+/**
+ * Input for creating a new token class/collection
+ */
+export interface CreateTokenClassInput {
+  /** Token class key identifying the collection */
+  tokenClass: {
+    collection: string
+    category: string
+    type: string
+    additionalKey: string
+  }
+  /** Human-readable name */
+  name: string
+  /** Token symbol (e.g., "BTC", "ETH") */
+  symbol: string
+  /** Description of the token */
+  description: string
+  /** Image URL for the token */
+  image: string
+  /** Whether this is an NFT collection (default: true) */
+  isNonFungible?: boolean
+  /** Number of decimal places (default: 0 for NFTs) */
+  decimals?: number
+  /** Maximum supply (default: unlimited) */
+  maxSupply?: BigNumber | string | number
+  /** Maximum capacity per wallet (default: unlimited) */
+  maxCapacity?: BigNumber | string | number
+  /** Rarity level (optional) */
+  rarity?: string
+  /** Authorities who can manage this token (defaults to creator) */
+  authorities?: string[]
+}
+
+/**
+ * Create a new token class/collection
+ * This creates the token definition on-chain. The creator becomes the authority.
+ */
+export async function createCollection(
+  client: BrowserConnectClient,
+  input: CreateTokenClassInput
+): Promise<TokenClass> {
+  const tokenApi = createTokenApi(client)
+
+  // Build the base DTO with required fields
+  // Use type assertion since the SDK types don't perfectly match the API
+  const dto = {
+    tokenClass: {
+      collection: input.tokenClass.collection,
+      category: input.tokenClass.category,
+      type: input.tokenClass.type,
+      additionalKey: input.tokenClass.additionalKey,
+    },
+    name: input.name,
+    symbol: input.symbol,
+    description: input.description,
+    image: input.image,
+    isNonFungible: input.isNonFungible ?? true,
+    decimals: input.decimals ?? 0,
+    uniqueKey: generateUniqueKey(),
+    // Optional fields with defaults
+    ...(input.maxSupply !== undefined && { maxSupply: toBigNumber(input.maxSupply) }),
+    ...(input.maxCapacity !== undefined && { maxCapacity: toBigNumber(input.maxCapacity) }),
+    ...(input.rarity && { rarity: input.rarity }),
+    ...(input.authorities && input.authorities.length > 0 && { authorities: input.authorities }),
+  }
+
+  logRequest('CreateTokenClass', dto)
+
+  return executeApiCall(
+    // Cast to any then to the expected type since SDK types are stricter than API
+    () => tokenApi.CreateTokenClass(dto as Parameters<typeof tokenApi.CreateTokenClass>[0]),
+    'CreateTokenClass'
+  )
+}
+
+// ============================================================================
 // Environment Configuration Export
 // ============================================================================
 
@@ -310,4 +389,4 @@ export function getGalaChainConfig() {
 /**
  * Re-export types for convenience
  */
-export type { TokenBalance, TokenInstanceKey, TokenClassKey }
+export type { TokenBalance, TokenInstanceKey, TokenClassKey, TokenClass }

@@ -272,7 +272,7 @@ describe('CreatorsView.vue', () => {
       expect(wrapper.findComponent({ name: 'CollectionList' }).exists()).toBe(true)
     })
 
-    it('has Create Collection button (disabled)', () => {
+    it('has Create Collection button (enabled)', () => {
       const wrapper = mount(CreatorsView, {
         global: {
           plugins: [createTestingPinia()],
@@ -282,6 +282,7 @@ describe('CreatorsView.vue', () => {
             PumpEntry: true,
             CollectionList: true,
             LoadingSpinner: true,
+            CreateCollectionModal: true,
           }
         }
       })
@@ -290,7 +291,8 @@ describe('CreatorsView.vue', () => {
       const createButton = buttons.find(b => b.text().includes('Create New'))
 
       expect(createButton).toBeDefined()
-      expect(createButton?.attributes('disabled')).toBeDefined()
+      // The Create Collection button is now enabled (not disabled)
+      expect(createButton?.attributes('disabled')).toBeUndefined()
     })
 
     it('has Manage Classes button (disabled)', () => {

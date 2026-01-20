@@ -314,3 +314,46 @@ Please test NFT burning with an authorized wallet. Verify NFT is removed after b
 9. Reject a burn in MetaMask to verify error handling
 
 ---
+
+## creators-create-collection (Iteration 19)
+
+### Test Requirements
+Please test creating a new collection. Verify it appears in your collections after creation.
+
+### Checklist
+- [ ] Create Collection button is enabled in the Creators page
+- [ ] CreateCollectionModal opens when clicking the button
+- [ ] Basic Information section shows: Name, Symbol, Description, Image URL fields
+- [ ] Token Type section shows NFT Collection and Fungible Token buttons
+- [ ] NFT Collection is selected by default
+- [ ] Token Identifiers section shows: Collection, Category, Type, Additional Key fields
+- [ ] Collection key preview updates as you type
+- [ ] Advanced Options expands to show Max Supply (and Decimals for fungible)
+- [ ] Form validation shows errors for missing required fields
+- [ ] Form validation rejects invalid URLs for image
+- [ ] Continue button is disabled until form is valid
+- [ ] Confirmation step shows collection preview with all details
+- [ ] Info notice explains what creating a collection does
+- [ ] Confirm Create triggers MetaMask signature popup
+- [ ] Approving transaction creates collection and refreshes list
+- [ ] Rejecting transaction shows error message
+- [ ] New collection appears in My Collections after successful creation
+
+### How to Test
+1. Start the dev server: `npm run dev`
+2. Connect your wallet using the Connect Wallet button
+3. Navigate to the Creators page
+4. Click "Create New" button in the Create Collection card
+5. Fill in the form with valid values:
+   - Name: "Test Collection"
+   - Symbol: "TEST"
+   - Image URL: any valid HTTPS image URL
+   - Collection: "test-collection"
+   - Category: "Item"
+   - Type: "nft"
+6. Verify form validation by leaving required fields empty
+7. Click Continue and review the confirmation
+8. Click Create Collection to trigger wallet signing
+9. Verify the collection appears in My Collections after creation
+
+---
