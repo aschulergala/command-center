@@ -29,6 +29,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@gala-chain/api": "^2.7.1",
     "@nestjs/cli": "^11.0.16",
     "@nestjs/common": "^11.1.12",
     "@nestjs/config": "^4.0.2",
