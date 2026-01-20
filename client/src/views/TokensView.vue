@@ -7,6 +7,7 @@ import AllowanceList from '@/components/tokens/AllowanceList.vue'
 import SortDropdown from '@/components/tokens/SortDropdown.vue'
 import TransferModal from '@/components/tokens/TransferModal.vue'
 import MintModal from '@/components/tokens/MintModal.vue'
+import BurnModal from '@/components/tokens/BurnModal.vue'
 import { useFungibleTokens } from '@/composables/useFungibleTokens'
 import type { FungibleTokenDisplay } from '@shared/types/display'
 
@@ -32,6 +33,10 @@ const selectedTokenForTransfer = ref<FungibleTokenDisplay | null>(null)
 // Mint modal state
 const mintModalOpen = ref(false)
 const selectedTokenForMint = ref<FungibleTokenDisplay | null>(null)
+
+// Burn modal state
+const burnModalOpen = ref(false)
+const selectedTokenForBurn = ref<FungibleTokenDisplay | null>(null)
 
 // Fetch tokens on mount if connected
 onMounted(async () => {
@@ -74,8 +79,19 @@ async function handleMintSuccess(token: FungibleTokenDisplay): Promise<void> {
 }
 
 function handleBurn(token: FungibleTokenDisplay): void {
-  // TODO: Open burn modal
-  console.log('Burn token:', token.tokenKey)
+  selectedTokenForBurn.value = token
+  burnModalOpen.value = true
+}
+
+function handleCloseBurnModal(): void {
+  burnModalOpen.value = false
+  selectedTokenForBurn.value = null
+}
+
+async function handleBurnSuccess(token: FungibleTokenDisplay): Promise<void> {
+  // Refresh token balances after successful burn
+  await fetchAll()
+  console.log('Burn successful for token:', token.tokenKey)
 }
 
 async function handleRefresh(): Promise<void> {
@@ -236,6 +252,14 @@ async function handleRefresh(): Promise<void> {
       :open="mintModalOpen"
       @close="handleCloseMintModal"
       @success="handleMintSuccess"
+    />
+
+    <!-- Burn Modal -->
+    <BurnModal
+      :token="selectedTokenForBurn"
+      :open="burnModalOpen"
+      @close="handleCloseBurnModal"
+      @success="handleBurnSuccess"
     />
   </div>
 </template>

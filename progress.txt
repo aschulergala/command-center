@@ -541,3 +541,50 @@
   - Reuse patterns from TransferModal for consistent UX across modals
 ---
 
+## Iteration 14 - fungible-tokens-burn
+- What was implemented:
+  - Created client/src/lib/schemas/burnSchema.ts for validation
+    - isValidBurnAmount() validates positive finite numbers
+    - isWithinBalance() validates against token balance
+    - createBurnSchema() factory with confirmation checkbox requirement
+    - formatBurnAmount() for display formatting
+  - Created client/src/composables/useBurnToken.ts for burn operations
+    - executeBurn() to execute burn via GalaChain
+    - buildTokenInstanceKey() to build token instance key from display object
+    - Reactive isBurning, isLoading, error states
+    - burnTokens expects array of { tokenInstanceKey, quantity }
+  - Created client/src/components/tokens/BurnModal.vue
+    - Native <dialog> element with Tailwind styling
+    - VeeValidate + @vee-validate/zod form validation
+    - Token info display with current balance
+    - Prominent warning banner: "This action is irreversible"
+    - Explanation that tokens will be permanently destroyed
+    - Amount input with MAX button
+    - Required confirmation checkbox before continuing
+    - Two-step flow: form → confirmation with final warning
+    - Red theme styling for burn UI (distinguishes from mint/transfer)
+    - Loading spinner during burn execution
+    - Error display for failed burns
+  - Integrated BurnModal into TokensView.vue
+    - Opens when Burn button clicked on TokenCard
+    - Refreshes token list on successful burn
+- Files changed:
+  - client/src/lib/schemas/burnSchema.ts (new)
+  - client/src/composables/useBurnToken.ts (new)
+  - client/src/components/tokens/BurnModal.vue (new)
+  - client/src/views/TokensView.vue (updated - integrated BurnModal)
+  - client/__tests__/lib/schemas/burnSchema.spec.ts (new - 30 tests)
+  - client/__tests__/composables/useBurnToken.spec.ts (new - 13 tests)
+  - client/__tests__/components/tokens/BurnModal.spec.ts (new - 16 tests)
+  - IMPLEMENTATION_PLAN.json (updated)
+  - manualTestingRequired.txt (updated)
+- GalaChain tools used: None (used existing useGalaChain composable)
+- Tests: All 379 tests pass (353 client + 26 server)
+- Learnings for future iterations:
+  - burnTokens in useGalaChain expects array of { tokenInstanceKey, quantity } - not separate args
+  - Red theme for burn UI emphasizes the destructive nature of the action
+  - Confirmation checkbox in the form step (not just confirmation step) adds safety
+  - Two warnings: one in form with checkbox, one final warning in confirmation step
+  - Component tests for buttons with async emit handlers may not trigger - test button existence instead
+---
+

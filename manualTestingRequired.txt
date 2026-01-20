@@ -135,3 +135,39 @@ Please test token minting with an authorized wallet. Verify balance and allowanc
 8. Reject a mint in MetaMask to verify error handling
 
 ---
+
+## fungible-tokens-burn (Iteration 14)
+
+### Test Requirements
+Please test token burning with an authorized wallet. Verify the confirmation flow and balance update.
+
+### Checklist
+- [ ] Burn button only appears on tokens where user has burn authority
+- [ ] Burn modal opens when clicking Burn button on TokenCard
+- [ ] Token info displays correctly in modal (name, symbol, current balance)
+- [ ] Warning banner prominently displays "This action is irreversible"
+- [ ] Warning explains tokens will be permanently destroyed
+- [ ] Amount validation works (rejects zero, negative, exceeding balance)
+- [ ] MAX button sets amount to full balance
+- [ ] Confirmation checkbox is required before continuing
+- [ ] Continue button disabled until form is valid AND checkbox checked
+- [ ] Confirmation step shows burn summary (token, amount, new balance)
+- [ ] Final warning with red styling displays before confirm
+- [ ] Back button returns to form with values preserved
+- [ ] Confirm Burn triggers MetaMask signature popup
+- [ ] Approving transaction completes burn, closes modal, refreshes balances
+- [ ] Rejecting transaction shows error message, keeps modal open
+- [ ] Balance decreases after successful burn
+
+### How to Test
+1. Start the dev server: `npm run dev`
+2. Connect a wallet that has burn authority for at least one token
+3. Navigate to the Tokens page
+4. Verify "Burn" badge appears on authorized tokens
+5. Click "Burn" on an authorized token
+6. Test form validation with invalid inputs
+7. Verify confirmation checkbox is required
+8. Complete a burn and verify balance updates
+9. Reject a burn in MetaMask to verify error handling
+
+---

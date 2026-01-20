@@ -618,8 +618,8 @@
         "Build BurnTokensDto and submit signed transaction",
         "Refresh balances on successful burn"
       ],
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "Implemented burnSchema.ts for validation with confirmation checkbox requirement, useBurnToken.ts composable for burn operations, and BurnModal.vue with two-step flow (form with warning banner → confirmation with final warning). Red theme styling for burn UI. Integrated into TokensView.vue. All 379 tests pass (353 client + 26 server).",
       "testing": {
         "automated": [
           "Unit test: BurnTokensDto built correctly",
