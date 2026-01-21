@@ -9,7 +9,8 @@
       "WebFetch(domain:connect.gala.com)",
       "Bash(npm run test:*)",
       "Bash(npm run typecheck:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfix: correct GalaChain gateway URLs and remove separate API_URL\n\n- Update GALACHAIN_GATEWAY_URL to use correct endpoints:\n  - Production: https://gateway-mainnet.galachain.com/api/asset/token-contract\n  - Stage: https://gateway-testnet.galachain.com/api/testnet01/gc-a9b8b472b035c0510508c248d1110d3162b7e5f4-GalaChainToken\n- Remove GALACHAIN_API_URL as all chaincode invocations go through the gateway\n- Update configuration files \\(server and client\\) to use gatewayUrl directly\n- Update galachainClient.ts to use gatewayUrl as the complete token contract URL\n- Update all related tests to reflect the new URL structure\n\nAll 1197 tests pass \\(1139 client + 58 server\\).\nEOF\n\\)\")"
     ]
   }
 }

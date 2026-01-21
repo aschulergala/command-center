@@ -12,9 +12,10 @@ import type { TokenAllowance } from '@gala-chain/api';
 
 /**
  * Mock function implementations
+ * Note: fetchBalances and fetchAllowances do NOT take a client parameter (unsigned read operations)
  */
-export const mockFetchBalances = vi.fn<Parameters<any>, Promise<TokenBalance[]>>().mockResolvedValue([]);
-export const mockFetchAllowances = vi.fn<Parameters<any>, Promise<TokenAllowance[]>>().mockResolvedValue([]);
+export const mockFetchBalances = vi.fn<[string, any?], Promise<TokenBalance[]>>().mockResolvedValue([]);
+export const mockFetchAllowances = vi.fn<[string, any?], Promise<TokenAllowance[]>>().mockResolvedValue([]);
 export const mockTransfer = vi.fn<Parameters<any>, Promise<TokenBalance[]>>().mockResolvedValue([]);
 export const mockMint = vi.fn<Parameters<any>, Promise<TokenBalance[]>>().mockResolvedValue([]);
 export const mockBurn = vi.fn<Parameters<any>, Promise<TokenBalance[]>>().mockResolvedValue([]);

@@ -7,14 +7,11 @@ vi.mock('@/lib/config', () => ({
     galachain: {
       env: 'stage',
       gatewayUrl: 'https://gateway-stage.galachain.com',
-      apiUrl: 'https://api-stage.galachain.com',
     },
   },
 }))
 
-// Mock TokenApi
-const mockFetchBalances = vi.fn()
-const mockFetchAllowances = vi.fn()
+// Mock TokenApi for signed operations
 const mockTransferToken = vi.fn()
 const mockMintToken = vi.fn()
 const mockBurnTokens = vi.fn()
@@ -22,8 +19,6 @@ const mockBurnTokens = vi.fn()
 vi.mock('@gala-chain/connect', () => ({
   BrowserConnectClient: vi.fn(),
   TokenApi: vi.fn().mockImplementation(() => ({
-    FetchBalances: mockFetchBalances,
-    FetchAllowances: mockFetchAllowances,
     TransferToken: mockTransferToken,
     MintToken: mockMintToken,
     BurnTokens: mockBurnTokens,
@@ -45,6 +40,10 @@ vi.mock('@gala-chain/connect', () => ({
 const TEST_ADDRESS_1 = 'client|testAddress1234567890abcdef'
 const TEST_ADDRESS_2 = 'client|testAddress2234567890abcdef'
 
+// Mock fetch for unsigned read operations
+const mockFetch = vi.fn()
+global.fetch = mockFetch
+
 describe('galachainClient', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -54,20 +53,31 @@ describe('galachainClient', () => {
     vi.clearAllMocks()
   })
 
+  // ============================================================================
+  // Read Operations (unsigned, use fetch directly)
+  // ============================================================================
+
   describe('fetchBalances', () => {
-    it('should call TokenApi.FetchBalances with correct parameters', async () => {
+    it('should make unsigned POST request with correct parameters', async () => {
       const { fetchBalances } = await import('@/lib/galachainClient')
 
-      mockFetchBalances.mockResolvedValue({
-        Data: [{ collection: 'GALA', quantity: '100' }],
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({
+          Status: 1,
+          Data: [{ collection: 'GALA', quantity: '100' }],
+        }),
       })
 
-      const result = await fetchBalances({} as any, TEST_ADDRESS_1)
+      const result = await fetchBalances(TEST_ADDRESS_1)
 
-      expect(mockFetchBalances).toHaveBeenCalledWith(
-        expect.objectContaining({
-          owner: TEST_ADDRESS_1,
-        })
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://gateway-stage.galachain.com/FetchBalances',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ owner: TEST_ADDRESS_1 }),
+        }
       )
       expect(result).toEqual([{ collection: 'GALA', quantity: '100' }])
     })
@@ -75,20 +85,27 @@ describe('galachainClient', () => {
     it('should pass filters to FetchBalances', async () => {
       const { fetchBalances } = await import('@/lib/galachainClient')
 
-      mockFetchBalances.mockResolvedValue({
-        Data: [],
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({
+          Status: 1,
+          Data: [],
+        }),
       })
 
-      await fetchBalances({} as any, TEST_ADDRESS_1, {
+      await fetchBalances(TEST_ADDRESS_1, {
         collection: 'GALA',
         category: 'Unit',
       })
 
-      expect(mockFetchBalances).toHaveBeenCalledWith(
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://gateway-stage.galachain.com/FetchBalances',
         expect.objectContaining({
-          owner: TEST_ADDRESS_1,
-          collection: 'GALA',
-          category: 'Unit',
+          body: JSON.stringify({
+            owner: TEST_ADDRESS_1,
+            collection: 'GALA',
+            category: 'Unit',
+          }),
         })
       )
     })
@@ -96,45 +113,84 @@ describe('galachainClient', () => {
     it('should handle empty balance list', async () => {
       const { fetchBalances } = await import('@/lib/galachainClient')
 
-      mockFetchBalances.mockResolvedValue({
-        Data: [],
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({
+          Status: 1,
+          Data: [],
+        }),
       })
 
-      const result = await fetchBalances({} as any, TEST_ADDRESS_1)
+      const result = await fetchBalances(TEST_ADDRESS_1)
       expect(result).toEqual([])
     })
 
-    it('should throw GalaChainError on API error', async () => {
+    it('should throw GalaChainError on API error response', async () => {
       const { fetchBalances } = await import('@/lib/galachainClient')
-      const { GalaChainResponseError } = await import('@gala-chain/connect')
 
-      mockFetchBalances.mockRejectedValue(
-        new GalaChainResponseError({
-          error: 'INSUFFICIENT_BALANCE',
-          message: 'Not enough tokens',
-        })
-      )
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({
+          Status: 0,
+          Error: 'INSUFFICIENT_BALANCE',
+          Message: 'Not enough tokens',
+        }),
+      })
 
-      await expect(fetchBalances({} as any, TEST_ADDRESS_1)).rejects.toThrow(
-        GalaChainError
-      )
+      await expect(fetchBalances(TEST_ADDRESS_1)).rejects.toThrow(GalaChainError)
+    })
+
+    it('should throw GalaChainError on HTTP error', async () => {
+      const { fetchBalances } = await import('@/lib/galachainClient')
+
+      mockFetch.mockResolvedValue({
+        ok: false,
+        status: 500,
+        statusText: 'Internal Server Error',
+      })
+
+      await expect(fetchBalances(TEST_ADDRESS_1)).rejects.toThrow(GalaChainError)
+    })
+
+    it('should NOT require wallet client', async () => {
+      const { fetchBalances } = await import('@/lib/galachainClient')
+
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({
+          Status: 1,
+          Data: [{ collection: 'GALA', quantity: '100' }],
+        }),
+      })
+
+      // fetchBalances does not take a client parameter anymore
+      const result = await fetchBalances(TEST_ADDRESS_1)
+      expect(result).toBeDefined()
+      expect(mockFetch).toHaveBeenCalled()
     })
   })
 
   describe('fetchAllowances', () => {
-    it('should call TokenApi.FetchAllowances with correct parameters', async () => {
+    it('should make unsigned POST request with correct parameters', async () => {
       const { fetchAllowances } = await import('@/lib/galachainClient')
 
-      mockFetchAllowances.mockResolvedValue({
-        Data: { results: [{ grantedBy: 'eth|0xOwner', quantity: '50' }] },
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({
+          Status: 1,
+          Data: { results: [{ grantedBy: 'eth|0xOwner', quantity: '50' }] },
+        }),
       })
 
-      const result = await fetchAllowances({} as any, TEST_ADDRESS_1)
+      const result = await fetchAllowances(TEST_ADDRESS_1)
 
-      expect(mockFetchAllowances).toHaveBeenCalledWith(
-        expect.objectContaining({
-          grantedTo: TEST_ADDRESS_1,
-        })
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://gateway-stage.galachain.com/FetchAllowances',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ grantedTo: TEST_ADDRESS_1 }),
+        }
       )
       expect(result).toEqual([{ grantedBy: 'eth|0xOwner', quantity: '50' }])
     })
@@ -142,22 +198,50 @@ describe('galachainClient', () => {
     it('should handle filters with grantedBy', async () => {
       const { fetchAllowances } = await import('@/lib/galachainClient')
 
-      mockFetchAllowances.mockResolvedValue({
-        Data: { results: [] },
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({
+          Status: 1,
+          Data: { results: [] },
+        }),
       })
 
-      await fetchAllowances({} as any, TEST_ADDRESS_1, {
+      await fetchAllowances(TEST_ADDRESS_1, {
         grantedBy: TEST_ADDRESS_2,
       })
 
-      expect(mockFetchAllowances).toHaveBeenCalledWith(
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://gateway-stage.galachain.com/FetchAllowances',
         expect.objectContaining({
-          grantedTo: TEST_ADDRESS_1,
-          grantedBy: TEST_ADDRESS_2,
+          body: JSON.stringify({
+            grantedTo: TEST_ADDRESS_1,
+            grantedBy: TEST_ADDRESS_2,
+          }),
         })
       )
     })
+
+    it('should NOT require wallet client', async () => {
+      const { fetchAllowances } = await import('@/lib/galachainClient')
+
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({
+          Status: 1,
+          Data: { results: [] },
+        }),
+      })
+
+      // fetchAllowances does not take a client parameter anymore
+      const result = await fetchAllowances(TEST_ADDRESS_1)
+      expect(result).toBeDefined()
+      expect(mockFetch).toHaveBeenCalled()
+    })
   })
+
+  // ============================================================================
+  // Signed Write Operations (require wallet client)
+  // ============================================================================
 
   describe('transfer', () => {
     it('should call TokenApi.TransferToken with correct parameters', async () => {

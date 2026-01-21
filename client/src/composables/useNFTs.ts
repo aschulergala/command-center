@@ -50,7 +50,7 @@ export function useNFTs() {
     nftsStore.setError(null)
 
     try {
-      const result = await galaChain.getBalances()
+      const result = await galaChain.getBalances(walletStore.address!)
 
       if (result.success) {
         // Cast to TokenBalance from @gala-chain/connect which is the actual return type
@@ -76,7 +76,7 @@ export function useNFTs() {
     }
 
     try {
-      const result = await galaChain.getAllowances()
+      const result = await galaChain.getAllowances(walletStore.address!)
 
       if (result.success) {
         nftsStore.setAllowances(

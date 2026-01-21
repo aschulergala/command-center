@@ -14,7 +14,6 @@ vi.mock('@/lib/galachainClient', () => ({
   getGalaChainConfig: vi.fn(() => ({
     env: 'stage',
     gatewayUrl: 'https://gateway-stage.galachain.com',
-    apiUrl: 'https://api-stage.galachain.com',
   })),
 }))
 
@@ -55,7 +54,6 @@ describe('useGalaChain', () => {
       expect(config.value).toEqual({
         env: 'stage',
         gatewayUrl: 'https://gateway-stage.galachain.com',
-        apiUrl: 'https://api-stage.galachain.com',
       })
     })
   })
@@ -90,36 +88,35 @@ describe('useGalaChain', () => {
     })
   })
 
+  // ============================================================================
+  // Read Operations (no wallet signing required)
+  // ============================================================================
+
   describe('getBalances', () => {
-    it('should return error when wallet not connected', async () => {
+    it('should return error when no address provided', async () => {
       const { getBalances } = useGalaChain()
 
-      const result = await getBalances()
+      const result = await getBalances('')
 
       expect(result.success).toBe(false)
       if (!result.success) {
-        expect(result.error).toContain('not connected')
+        expect(result.error).toContain('required')
       }
     })
 
-    it('should fetch balances when wallet connected', async () => {
-      const walletStore = useWalletStore()
-      // Simulate connected wallet with client
-      walletStore.$patch({
-        connected: true,
-        address: 'eth|0x123',
-      })
-      // Mock getClient to return our mock client
-      vi.spyOn(walletStore, 'getClient').mockReturnValue(mockClient as any)
-
+    it('should fetch balances WITHOUT requiring wallet connection', async () => {
+      // Note: wallet is NOT connected, but read operations should still work
       const mockBalances = [{ collection: 'GALA', quantity: '100' }]
       vi.mocked(galachainClient.fetchBalances).mockResolvedValue(
         mockBalances as any
       )
 
-      const { getBalances, isLoading } = useGalaChain()
+      const { getBalances, isLoading, isConnected } = useGalaChain()
 
-      const resultPromise = getBalances()
+      // Verify wallet is NOT connected
+      expect(isConnected.value).toBe(false)
+
+      const resultPromise = getBalances('eth|0x123')
       expect(isLoading.value).toBe(true)
 
       const result = await resultPromise
@@ -129,43 +126,35 @@ describe('useGalaChain', () => {
       if (result.success) {
         expect(result.data).toEqual(mockBalances)
       }
-    })
 
-    it('should use provided owner address', async () => {
-      const walletStore = useWalletStore()
-      walletStore.$patch({
-        connected: true,
-        address: 'eth|0x123',
-      })
-      vi.spyOn(walletStore, 'getClient').mockReturnValue(mockClient as any)
-      vi.mocked(galachainClient.fetchBalances).mockResolvedValue([])
-
-      const { getBalances } = useGalaChain()
-
-      await getBalances('eth|0xOther')
-
+      // Verify fetchBalances was called without a client parameter
       expect(galachainClient.fetchBalances).toHaveBeenCalledWith(
-        mockClient,
-        'eth|0xOther',
+        'eth|0x123',
         undefined
       )
     })
 
-    it('should handle errors gracefully', async () => {
-      const walletStore = useWalletStore()
-      walletStore.$patch({
-        connected: true,
-        address: 'eth|0x123',
-      })
-      vi.spyOn(walletStore, 'getClient').mockReturnValue(mockClient as any)
+    it('should pass filters to fetchBalances', async () => {
+      vi.mocked(galachainClient.fetchBalances).mockResolvedValue([])
 
+      const { getBalances } = useGalaChain()
+
+      await getBalances('eth|0x123', { collection: 'GALA', category: 'Unit' })
+
+      expect(galachainClient.fetchBalances).toHaveBeenCalledWith(
+        'eth|0x123',
+        { collection: 'GALA', category: 'Unit' }
+      )
+    })
+
+    it('should handle errors gracefully', async () => {
       vi.mocked(galachainClient.fetchBalances).mockRejectedValue(
         new GalaChainError('Fetch failed', 'FETCH_ERROR')
       )
 
       const { getBalances, error } = useGalaChain()
 
-      const result = await getBalances()
+      const result = await getBalances('eth|0x123')
 
       expect(result.success).toBe(false)
       if (!result.success) {
@@ -176,29 +165,60 @@ describe('useGalaChain', () => {
   })
 
   describe('getAllowances', () => {
-    it('should fetch allowances when wallet connected', async () => {
-      const walletStore = useWalletStore()
-      walletStore.$patch({
-        connected: true,
-        address: 'eth|0x123',
-      })
-      vi.spyOn(walletStore, 'getClient').mockReturnValue(mockClient as any)
+    it('should return error when no address provided', async () => {
+      const { getAllowances } = useGalaChain()
 
+      const result = await getAllowances('')
+
+      expect(result.success).toBe(false)
+      if (!result.success) {
+        expect(result.error).toContain('required')
+      }
+    })
+
+    it('should fetch allowances WITHOUT requiring wallet connection', async () => {
+      // Note: wallet is NOT connected, but read operations should still work
       const mockAllowances = [{ grantedBy: 'eth|0xOwner', quantity: '50' }]
       vi.mocked(galachainClient.fetchAllowances).mockResolvedValue(
         mockAllowances as any
       )
 
-      const { getAllowances } = useGalaChain()
+      const { getAllowances, isConnected } = useGalaChain()
 
-      const result = await getAllowances()
+      // Verify wallet is NOT connected
+      expect(isConnected.value).toBe(false)
+
+      const result = await getAllowances('eth|0x123')
 
       expect(result.success).toBe(true)
       if (result.success) {
         expect(result.data).toEqual(mockAllowances)
       }
+
+      // Verify fetchAllowances was called without a client parameter
+      expect(galachainClient.fetchAllowances).toHaveBeenCalledWith(
+        'eth|0x123',
+        undefined
+      )
+    })
+
+    it('should pass filters to fetchAllowances', async () => {
+      vi.mocked(galachainClient.fetchAllowances).mockResolvedValue([])
+
+      const { getAllowances } = useGalaChain()
+
+      await getAllowances('eth|0x123', { grantedBy: 'eth|0xOther' })
+
+      expect(galachainClient.fetchAllowances).toHaveBeenCalledWith(
+        'eth|0x123',
+        { grantedBy: 'eth|0xOther' }
+      )
     })
   })
+
+  // ============================================================================
+  // Write Operations (require wallet signing)
+  // ============================================================================
 
   describe('transferToken', () => {
     it('should return error when wallet not connected', async () => {
@@ -217,6 +237,9 @@ describe('useGalaChain', () => {
       )
 
       expect(result.success).toBe(false)
+      if (!result.success) {
+        expect(result.error).toContain('not connected')
+      }
     })
 
     it('should transfer tokens when wallet connected', async () => {
@@ -289,6 +312,25 @@ describe('useGalaChain', () => {
   })
 
   describe('mintToken', () => {
+    it('should return error when wallet not connected', async () => {
+      const { mintToken } = useGalaChain()
+
+      const result = await mintToken(
+        {
+          collection: 'MyToken',
+          category: 'Unit',
+          type: 'none',
+          additionalKey: 'none',
+        },
+        '1000'
+      )
+
+      expect(result.success).toBe(false)
+      if (!result.success) {
+        expect(result.error).toContain('not connected')
+      }
+    })
+
     it('should mint tokens when wallet connected', async () => {
       const walletStore = useWalletStore()
       walletStore.$patch({
@@ -350,6 +392,28 @@ describe('useGalaChain', () => {
   })
 
   describe('burnTokens', () => {
+    it('should return error when wallet not connected', async () => {
+      const { burnTokens } = useGalaChain()
+
+      const result = await burnTokens([
+        {
+          tokenInstanceKey: {
+            collection: 'GALA',
+            category: 'Unit',
+            type: 'none',
+            additionalKey: 'none',
+            instance: 0,
+          },
+          quantity: '50',
+        },
+      ])
+
+      expect(result.success).toBe(false)
+      if (!result.success) {
+        expect(result.error).toContain('not connected')
+      }
+    })
+
     it('should burn tokens when wallet connected', async () => {
       const walletStore = useWalletStore()
       walletStore.$patch({

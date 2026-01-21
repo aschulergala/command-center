@@ -1,2 +1,12 @@
 Confusing and incorrect gateway URLs
-Prompting for signatures very often
+    # GalaChain Gateway URL (for chaincode operations) 
+    # Production: https://gateway-mainnet.galachain.com/api/asset/token-contract
+    # Stage: https://gateway-testnet.galachain.com/api/testnet01/gc-a9b8b472b035c0510508c248d1110d3162b7e5f4-GalaChainToken
+    GALACHAIN_GATEWAY_URL=https://gateway-testnet.galachain.com/api/testnet01/gc-a9b8b472b035c0510508c248d1110d3162b7e5f4-GalaChainToken
+
+# GalaChain API URL (for REST API calls)
+# Production: https://api.galachain.com
+# Stage: https://api-stage.galachain.com
+GALACHAIN_API_URL=https://api-stage.galachain.com
+
+Prompting for signatures very often (and on read ops)

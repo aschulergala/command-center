@@ -2,7 +2,8 @@
  * Composable for GalaChain operations
  *
  * Provides reactive access to GalaChain operations integrated with the wallet store.
- * Automatically uses the connected wallet for signing transactions.
+ * - Read operations (balances, allowances) do NOT require wallet connection
+ * - Write operations (transfer, mint, burn) require wallet connection for signing
  */
 
 import { computed, ref } from 'vue'
@@ -53,6 +54,7 @@ export function useGalaChain() {
 
   /**
    * Get the BrowserConnectClient, throwing if not connected
+   * Used for write operations that require signing
    */
   function requireClient() {
     const client = walletStore.getClient()
@@ -101,16 +103,17 @@ export function useGalaChain() {
   }
 
   // ============================================================================
-  // Read Operations
+  // Read Operations (NO wallet signing required)
   // ============================================================================
 
   /**
    * Fetch token balances for an address
-   * @param owner - Optional owner address (defaults to connected wallet)
+   * This is a read-only operation that does NOT require wallet connection
+   * @param owner - Owner address to fetch balances for (required)
    * @param filters - Optional filters for collection, category, type, additionalKey
    */
   async function getBalances(
-    owner?: string,
+    owner: string,
     filters?: {
       collection?: string
       category?: string
@@ -119,22 +122,21 @@ export function useGalaChain() {
     }
   ): Promise<OperationResult<TokenBalance[]>> {
     return executeOperation(async () => {
-      const client = requireClient()
-      const address = owner || walletStore.address
-      if (!address) {
-        throw new GalaChainError('No wallet address available.', 'NO_ADDRESS')
+      if (!owner) {
+        throw new GalaChainError('Owner address is required.', 'NO_ADDRESS')
       }
-      return fetchBalances(client, address, filters)
+      return fetchBalances(owner, filters)
     }, 'getBalances')
   }
 
   /**
    * Fetch token allowances for an address
-   * @param grantedTo - Optional address to check allowances for (defaults to connected wallet)
+   * This is a read-only operation that does NOT require wallet connection
+   * @param grantedTo - Address to check allowances for (required)
    * @param filters - Optional filters for collection, category, type, etc.
    */
   async function getAllowances(
-    grantedTo?: string,
+    grantedTo: string,
     filters?: {
       collection?: string
       category?: string
@@ -144,21 +146,20 @@ export function useGalaChain() {
     }
   ): Promise<OperationResult<TokenAllowance[]>> {
     return executeOperation(async () => {
-      const client = requireClient()
-      const address = grantedTo || walletStore.address
-      if (!address) {
-        throw new GalaChainError('No wallet address available.', 'NO_ADDRESS')
+      if (!grantedTo) {
+        throw new GalaChainError('Address is required.', 'NO_ADDRESS')
       }
-      return fetchAllowances(client, address, filters)
+      return fetchAllowances(grantedTo, filters)
     }, 'getAllowances')
   }
 
   // ============================================================================
-  // Write Operations (requires signing)
+  // Write Operations (requires wallet signing)
   // ============================================================================
 
   /**
    * Transfer tokens to another address
+   * Requires wallet connection for signing
    * @param to - Recipient address
    * @param tokenInstance - Token to transfer
    * @param quantity - Amount to transfer
@@ -180,6 +181,7 @@ export function useGalaChain() {
 
   /**
    * Mint tokens (requires mint authority)
+   * Requires wallet connection for signing
    * @param tokenClass - Token class to mint
    * @param quantity - Amount to mint
    * @param owner - Recipient of minted tokens (defaults to connected wallet)
@@ -206,6 +208,7 @@ export function useGalaChain() {
 
   /**
    * Burn tokens (requires burn authority or ownership)
+   * Requires wallet connection for signing
    * @param tokenInstances - Array of tokens and quantities to burn
    */
   async function burnTokens(
@@ -233,11 +236,11 @@ export function useGalaChain() {
     // Actions
     clearError,
 
-    // Read operations
+    // Read operations (no signing required)
     getBalances,
     getAllowances,
 
-    // Write operations
+    // Write operations (signing required)
     transferToken,
     mintToken,
     burnTokens,

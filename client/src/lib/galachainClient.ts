@@ -1,10 +1,9 @@
 /**
  * GalaChain client module for chaincode interactions
  *
- * This module provides typed methods for interacting with GalaChain using
- * the @gala-chain/connect library:
- * - TokenApi for token operations (balances, transfers, mints, burns)
- * - BrowserConnectClient for wallet connection and signing
+ * This module provides typed methods for interacting with GalaChain:
+ * - Read operations (FetchBalances, FetchAllowances) - No signing required
+ * - Write operations (Transfer, Mint, Burn) - Require wallet signing via BrowserConnectClient
  */
 
 import { BrowserConnectClient, TokenApi, GalaChainResponseError } from '@gala-chain/connect'
@@ -24,6 +23,7 @@ function getTokenApiUrl(): string {
 
 /**
  * Create a TokenApi instance from a BrowserConnectClient
+ * Used for write operations that require signing
  */
 export function createTokenApi(client: BrowserConnectClient): TokenApi {
   return new TokenApi(getTokenApiUrl(), client)
@@ -76,10 +76,141 @@ function logResponse<T>(method: string, response: T): void {
   }
 }
 
+// ============================================================================
+// Unsigned Read Operations (No wallet required)
+// ============================================================================
+
 /**
- * Wrap API calls with error handling
+ * GalaChain API response structure
  */
-async function executeApiCall<T>(
+interface GalaChainResponse<T> {
+  Status: number
+  Data?: T
+  Message?: string
+  Error?: string
+  ErrorCode?: number
+}
+
+/**
+ * Make an unsigned HTTP POST request to the GalaChain API
+ * Used for read operations that don't require signing
+ */
+async function unsignedPost<T>(method: string, dto: object): Promise<T> {
+  const url = `${getTokenApiUrl()}/${method}`
+
+  logRequest(method, dto)
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(dto),
+    })
+
+    if (!response.ok) {
+      throw new GalaChainError(
+        `HTTP error: ${response.status} ${response.statusText}`,
+        'NETWORK_ERROR'
+      )
+    }
+
+    const result: GalaChainResponse<T> = await response.json()
+
+    logResponse(method, result)
+
+    // Check for GalaChain error response (Status !== 1 indicates error)
+    if (result.Status !== 1) {
+      throw new GalaChainError(
+        result.Message || result.Error || `Operation failed with status ${result.Status}`,
+        result.Error || 'API_ERROR',
+        undefined,
+        { errorCode: result.ErrorCode }
+      )
+    }
+
+    return result.Data as T
+  } catch (err) {
+    logError(method, err)
+
+    if (err instanceof GalaChainError) {
+      throw err
+    }
+
+    if (err instanceof Error) {
+      // Network or fetch errors
+      if (err.name === 'TypeError' && err.message.includes('fetch')) {
+        throw new GalaChainError(
+          'Unable to connect to GalaChain. Please check your network connection.',
+          'NETWORK_ERROR'
+        )
+      }
+      throw new GalaChainError(err.message, 'UNKNOWN_ERROR')
+    }
+
+    throw new GalaChainError('An unexpected error occurred.', 'UNKNOWN_ERROR')
+  }
+}
+
+/**
+ * Fetch token balances for an address
+ * This is a read-only operation that does NOT require wallet signing
+ */
+export async function fetchBalances(
+  owner: string,
+  filters?: {
+    collection?: string
+    category?: string
+    type?: string
+    additionalKey?: string
+  }
+): Promise<TokenBalance[]> {
+  const dto = {
+    owner: owner as UserRef,
+    ...filters,
+  }
+
+  return unsignedPost<TokenBalance[]>('FetchBalances', dto)
+}
+
+/**
+ * Fetch token allowances for an address
+ * This is a read-only operation that does NOT require wallet signing
+ */
+export async function fetchAllowances(
+  grantedTo: string,
+  filters?: {
+    collection?: string
+    category?: string
+    type?: string
+    additionalKey?: string
+    grantedBy?: string
+  }
+): Promise<TokenAllowance[]> {
+  const dto = {
+    grantedTo: grantedTo as UserRef,
+    ...(filters?.collection && { collection: filters.collection }),
+    ...(filters?.category && { category: filters.category }),
+    ...(filters?.type && { type: filters.type }),
+    ...(filters?.additionalKey && { additionalKey: filters.additionalKey }),
+    ...(filters?.grantedBy && { grantedBy: filters.grantedBy as UserRef }),
+  }
+
+  const response = await unsignedPost<FetchAllowancesResponse>('FetchAllowances', dto)
+
+  // FetchAllowances returns FetchAllowancesResponse which has 'results' property
+  return response.results || []
+}
+
+// ============================================================================
+// Signed Write Operations (Wallet required)
+// ============================================================================
+
+/**
+ * Wrap API calls with error handling for signed operations
+ */
+async function executeSignedApiCall<T>(
   operation: () => Promise<{ Data: T }>,
   context: string
 ): Promise<T> {
@@ -115,78 +246,9 @@ async function executeApiCall<T>(
   }
 }
 
-// ============================================================================
-// Token Balance Operations
-// ============================================================================
-
-/**
- * Fetch token balances for an address
- */
-export async function fetchBalances(
-  client: BrowserConnectClient,
-  owner: string,
-  filters?: {
-    collection?: string
-    category?: string
-    type?: string
-    additionalKey?: string
-  }
-): Promise<TokenBalance[]> {
-  const tokenApi = createTokenApi(client)
-  const dto = {
-    owner: owner as UserRef,
-    ...filters,
-  }
-
-  logRequest('FetchBalances', dto)
-
-  return executeApiCall(
-    () => tokenApi.FetchBalances(dto),
-    'FetchBalances'
-  )
-}
-
-/**
- * Fetch token allowances for an address
- */
-export async function fetchAllowances(
-  client: BrowserConnectClient,
-  grantedTo: string,
-  filters?: {
-    collection?: string
-    category?: string
-    type?: string
-    additionalKey?: string
-    grantedBy?: string
-  }
-): Promise<TokenAllowance[]> {
-  const tokenApi = createTokenApi(client)
-  const dto = {
-    grantedTo: grantedTo as UserRef,
-    ...(filters?.collection && { collection: filters.collection }),
-    ...(filters?.category && { category: filters.category }),
-    ...(filters?.type && { type: filters.type }),
-    ...(filters?.additionalKey && { additionalKey: filters.additionalKey }),
-    ...(filters?.grantedBy && { grantedBy: filters.grantedBy as UserRef }),
-  }
-
-  logRequest('FetchAllowances', dto)
-
-  const response = await executeApiCall<FetchAllowancesResponse>(
-    () => tokenApi.FetchAllowances(dto),
-    'FetchAllowances'
-  )
-
-  // FetchAllowances returns FetchAllowancesResponse which has 'results' property
-  return response.results || []
-}
-
-// ============================================================================
-// Token Transfer Operations
-// ============================================================================
-
 /**
  * Transfer tokens to another address
+ * Requires wallet connection for signing
  */
 export async function transfer(
   client: BrowserConnectClient,
@@ -212,18 +274,15 @@ export async function transfer(
 
   logRequest('TransferToken', dto)
 
-  return executeApiCall(
+  return executeSignedApiCall(
     () => tokenApi.TransferToken(dto),
     'TransferToken'
   )
 }
 
-// ============================================================================
-// Token Mint Operations
-// ============================================================================
-
 /**
  * Mint tokens (requires mint authority)
+ * Requires wallet connection for signing
  */
 export async function mint(
   client: BrowserConnectClient,
@@ -246,18 +305,15 @@ export async function mint(
 
   logRequest('MintToken', dto)
 
-  return executeApiCall(
+  return executeSignedApiCall(
     () => tokenApi.MintToken(dto),
     'MintToken'
   )
 }
 
-// ============================================================================
-// Token Burn Operations
-// ============================================================================
-
 /**
  * Burn tokens (requires burn authority or ownership)
+ * Requires wallet connection for signing
  */
 export async function burn(
   client: BrowserConnectClient,
@@ -283,7 +339,7 @@ export async function burn(
 
   logRequest('BurnTokens', dto)
 
-  return executeApiCall(
+  return executeSignedApiCall(
     () => tokenApi.BurnTokens(dto),
     'BurnTokens'
   )
@@ -329,6 +385,7 @@ export interface CreateTokenClassInput {
 /**
  * Create a new token class/collection
  * This creates the token definition on-chain. The creator becomes the authority.
+ * Requires wallet connection for signing
  */
 export async function createCollection(
   client: BrowserConnectClient,
@@ -361,7 +418,7 @@ export async function createCollection(
 
   logRequest('CreateTokenClass', dto)
 
-  return executeApiCall(
+  return executeSignedApiCall(
     // Cast to any then to the expected type since SDK types are stricter than API
     () => tokenApi.CreateTokenClass(dto as Parameters<typeof tokenApi.CreateTokenClass>[0]),
     'CreateTokenClass'

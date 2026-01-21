@@ -1369,3 +1369,33 @@
   - Simulate form submissions in tests with vi.useFakeTimers() and vi.advanceTimersByTimeAsync()
   - opacity-75 on container elements effectively mutes child content
 ---
+
+## Iteration 29 - Fix GalaChain URL Configuration
+- What was implemented:
+  - Corrected GALACHAIN_GATEWAY_URL to use the proper endpoints:
+    - Production: https://gateway-mainnet.galachain.com/api/asset/token-contract
+    - Stage: https://gateway-testnet.galachain.com/api/testnet01/gc-a9b8b472b035c0510508c248d1110d3162b7e5f4-GalaChainToken
+  - Removed separate GALACHAIN_API_URL since all chaincode invocations go through the gateway
+  - Updated server configuration (src/config/configuration.ts) to only use gatewayUrl
+  - Updated client configuration (client/src/lib/config.ts) to only use gatewayUrl
+  - Updated galachainClient.ts getTokenApiUrl() to return gatewayUrl directly (it's now the complete URL)
+  - Updated all related tests to reflect the new URL structure
+- Files changed:
+  - .env (updated - not tracked in git)
+  - .env.example (updated)
+  - client/.env (updated - not tracked in git)
+  - src/config/configuration.ts (removed apiUrl)
+  - src/__tests__/configuration.spec.ts (updated tests)
+  - client/src/lib/config.ts (removed apiUrl)
+  - client/__tests__/config.spec.ts (updated tests)
+  - client/src/lib/galachainClient.ts (use gatewayUrl directly)
+  - client/__tests__/lib/galachainClient.spec.ts (updated tests)
+  - client/__tests__/mocks/galachain-client.ts (updated mock)
+- GalaChain tools used: None (configuration fix)
+- Tests: All 1197 tests pass (1139 client + 58 server)
+- Learnings for future iterations:
+  - GalaChain gateway URL is the complete endpoint URL, not a base URL
+  - There is no separate API URL - all chaincode invocations go through the gateway
+  - Production uses gateway-mainnet.galachain.com, stage uses gateway-testnet.galachain.com
+  - The testnet URL includes the specific contract path for the GalaChainToken contract
+---

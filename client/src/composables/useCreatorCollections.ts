@@ -46,7 +46,7 @@ export function useCreatorCollections() {
 
     try {
       // Fetch allowances to find collections where user has mint authority
-      const allowancesResult = await galaChain.getAllowances()
+      const allowancesResult = await galaChain.getAllowances(walletStore.address!)
 
       if (allowancesResult.success) {
         collectionsStore.setAllowances(allowancesResult.data, AllowanceType.Mint)
@@ -56,7 +56,7 @@ export function useCreatorCollections() {
       }
 
       // Also fetch balances to enrich collection data with owned counts
-      const balancesResult = await galaChain.getBalances()
+      const balancesResult = await galaChain.getBalances(walletStore.address!)
 
       if (balancesResult.success) {
         collectionsStore.setBalances(balancesResult.data as unknown as TokenBalance[])
