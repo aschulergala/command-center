@@ -7,7 +7,6 @@ export type GalaChainEnv = 'production' | 'stage';
 export interface GalaChainConfig {
   env: GalaChainEnv;
   gatewayUrl: string;
-  apiUrl: string;
 }
 
 export interface AppConfig {
@@ -15,14 +14,12 @@ export interface AppConfig {
   galachain: GalaChainConfig;
 }
 
-const GALACHAIN_DEFAULTS: Record<GalaChainEnv, { gatewayUrl: string; apiUrl: string }> = {
+const GALACHAIN_DEFAULTS: Record<GalaChainEnv, { gatewayUrl: string }> = {
   production: {
-    gatewayUrl: 'https://gateway.galachain.com',
-    apiUrl: 'https://api.galachain.com',
+    gatewayUrl: 'https://gateway-mainnet.galachain.com/api/asset/token-contract',
   },
   stage: {
-    gatewayUrl: 'https://gateway-stage.galachain.com',
-    apiUrl: 'https://api-stage.galachain.com',
+    gatewayUrl: 'https://gateway-testnet.galachain.com/api/testnet01/gc-a9b8b472b035c0510508c248d1110d3162b7e5f4-GalaChainToken',
   },
 };
 
@@ -71,10 +68,6 @@ function createConfig(): AppConfig {
       gatewayUrl: getUrl(
         import.meta.env.VITE_GALACHAIN_GATEWAY_URL,
         defaults.gatewayUrl,
-      ),
-      apiUrl: getUrl(
-        import.meta.env.VITE_GALACHAIN_API_URL,
-        defaults.apiUrl,
       ),
     },
   };

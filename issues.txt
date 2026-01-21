@@ -1,0 +1,2 @@
+Confusing and incorrect gateway URLs
+Prompting for signatures very often

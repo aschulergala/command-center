@@ -27,12 +27,10 @@ vi.mock('@/lib/config', async () => {
 
   const GALACHAIN_DEFAULTS = {
     production: {
-      gatewayUrl: 'https://gateway.galachain.com',
-      apiUrl: 'https://api.galachain.com',
+      gatewayUrl: 'https://gateway-mainnet.galachain.com/api/asset/token-contract',
     },
     stage: {
-      gatewayUrl: 'https://gateway-stage.galachain.com',
-      apiUrl: 'https://api-stage.galachain.com',
+      gatewayUrl: 'https://gateway-testnet.galachain.com/api/testnet01/gc-a9b8b472b035c0510508c248d1110d3162b7e5f4-GalaChainToken',
     },
   };
 
@@ -46,7 +44,6 @@ vi.mock('@/lib/config', async () => {
         galachain: {
           env: galachainEnv,
           gatewayUrl: getUrl(mockEnv.VITE_GALACHAIN_GATEWAY_URL, defaults.gatewayUrl),
-          apiUrl: getUrl(mockEnv.VITE_GALACHAIN_API_URL, defaults.apiUrl),
         },
       };
     },
@@ -64,8 +61,7 @@ describe('client config', () => {
       const { config } = await import('@/lib/config');
 
       expect(config.galachain.env).toBe('stage');
-      expect(config.galachain.gatewayUrl).toBe('https://gateway-stage.galachain.com');
-      expect(config.galachain.apiUrl).toBe('https://api-stage.galachain.com');
+      expect(config.galachain.gatewayUrl).toBe('https://gateway-testnet.galachain.com/api/testnet01/gc-a9b8b472b035c0510508c248d1110d3162b7e5f4-GalaChainToken');
     });
 
     it('should return empty apiBaseUrl by default', async () => {
@@ -101,22 +97,10 @@ describe('client config', () => {
       expect(config.galachain.gatewayUrl).toBe('https://custom-gateway.example.com');
     });
 
-    it('should use provided API URL', async () => {
-      mockEnv.VITE_GALACHAIN_API_URL = 'https://custom-api.example.com';
-      const { config } = await import('@/lib/config');
-      expect(config.galachain.apiUrl).toBe('https://custom-api.example.com');
-    });
-
     it('should fallback to default for invalid gateway URL', async () => {
       mockEnv.VITE_GALACHAIN_GATEWAY_URL = 'not-a-url';
       const { config } = await import('@/lib/config');
-      expect(config.galachain.gatewayUrl).toBe('https://gateway-stage.galachain.com');
-    });
-
-    it('should fallback to default for invalid API URL', async () => {
-      mockEnv.VITE_GALACHAIN_API_URL = 'not-a-url';
-      const { config } = await import('@/lib/config');
-      expect(config.galachain.apiUrl).toBe('https://api-stage.galachain.com');
+      expect(config.galachain.gatewayUrl).toBe('https://gateway-testnet.galachain.com/api/testnet01/gc-a9b8b472b035c0510508c248d1110d3162b7e5f4-GalaChainToken');
     });
   });
 
@@ -124,20 +108,17 @@ describe('client config', () => {
     it('should use production defaults when GALACHAIN_ENV is production', async () => {
       mockEnv.VITE_GALACHAIN_ENV = 'production';
       const { config } = await import('@/lib/config');
-      expect(config.galachain.gatewayUrl).toBe('https://gateway.galachain.com');
-      expect(config.galachain.apiUrl).toBe('https://api.galachain.com');
+      expect(config.galachain.gatewayUrl).toBe('https://gateway-mainnet.galachain.com/api/asset/token-contract');
     });
 
     it('should allow overriding production defaults with explicit URLs', async () => {
       mockEnv.VITE_GALACHAIN_ENV = 'production';
       mockEnv.VITE_GALACHAIN_GATEWAY_URL = 'https://custom-gateway.example.com';
-      mockEnv.VITE_GALACHAIN_API_URL = 'https://custom-api.example.com';
 
       const { config } = await import('@/lib/config');
 
       expect(config.galachain.env).toBe('production');
       expect(config.galachain.gatewayUrl).toBe('https://custom-gateway.example.com');
-      expect(config.galachain.apiUrl).toBe('https://custom-api.example.com');
     });
   });
 

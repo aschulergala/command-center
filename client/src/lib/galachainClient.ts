@@ -16,13 +16,10 @@ import { GalaChainError, logError } from './galachainErrors'
 
 /**
  * Get the token API URL based on environment
+ * The gateway URL is the complete URL to the token contract
  */
 function getTokenApiUrl(): string {
-  const baseUrl = config.galachain.apiUrl
-  // The token contract endpoint varies by environment
-  // Production: https://api.galachain.com/asset/token-contract
-  // Stage: https://api-stage.galachain.com/asset/token-contract
-  return `${baseUrl}/asset/token-contract`
+  return config.galachain.gatewayUrl
 }
 
 /**
@@ -382,7 +379,6 @@ export function getGalaChainConfig() {
   return {
     env: config.galachain.env,
     gatewayUrl: config.galachain.gatewayUrl,
-    apiUrl: config.galachain.apiUrl,
   }
 }
 

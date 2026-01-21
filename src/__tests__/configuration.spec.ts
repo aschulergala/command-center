@@ -11,7 +11,6 @@ describe('configuration', () => {
     delete process.env.PORT;
     delete process.env.GALACHAIN_ENV;
     delete process.env.GALACHAIN_GATEWAY_URL;
-    delete process.env.GALACHAIN_API_URL;
   });
 
   afterAll(() => {
@@ -24,8 +23,7 @@ describe('configuration', () => {
 
       expect(config.port).toBe(3000);
       expect(config.galachain.env).toBe('stage');
-      expect(config.galachain.gatewayUrl).toBe('https://gateway-stage.galachain.com');
-      expect(config.galachain.apiUrl).toBe('https://api-stage.galachain.com');
+      expect(config.galachain.gatewayUrl).toBe('https://gateway-testnet.galachain.com/api/testnet01/gc-a9b8b472b035c0510508c248d1110d3162b7e5f4-GalaChainToken');
     });
   });
 
@@ -89,20 +87,9 @@ describe('configuration', () => {
       expect(config.galachain.gatewayUrl).toBe('https://custom-gateway.example.com');
     });
 
-    it('should accept valid GALACHAIN_API_URL', () => {
-      process.env.GALACHAIN_API_URL = 'https://custom-api.example.com';
-      const config = configuration();
-      expect(config.galachain.apiUrl).toBe('https://custom-api.example.com');
-    });
-
     it('should reject invalid GALACHAIN_GATEWAY_URL', () => {
       process.env.GALACHAIN_GATEWAY_URL = 'not-a-url';
       expect(() => configuration()).toThrow('Invalid GALACHAIN_GATEWAY_URL');
-    });
-
-    it('should reject invalid GALACHAIN_API_URL', () => {
-      process.env.GALACHAIN_API_URL = 'not-a-url';
-      expect(() => configuration()).toThrow('Invalid GALACHAIN_API_URL');
     });
   });
 
@@ -110,27 +97,23 @@ describe('configuration', () => {
     it('should use stage defaults when GALACHAIN_ENV is stage', () => {
       process.env.GALACHAIN_ENV = 'stage';
       const config = configuration();
-      expect(config.galachain.gatewayUrl).toBe('https://gateway-stage.galachain.com');
-      expect(config.galachain.apiUrl).toBe('https://api-stage.galachain.com');
+      expect(config.galachain.gatewayUrl).toBe('https://gateway-testnet.galachain.com/api/testnet01/gc-a9b8b472b035c0510508c248d1110d3162b7e5f4-GalaChainToken');
     });
 
     it('should use production defaults when GALACHAIN_ENV is production', () => {
       process.env.GALACHAIN_ENV = 'production';
       const config = configuration();
-      expect(config.galachain.gatewayUrl).toBe('https://gateway.galachain.com');
-      expect(config.galachain.apiUrl).toBe('https://api.galachain.com');
+      expect(config.galachain.gatewayUrl).toBe('https://gateway-mainnet.galachain.com/api/asset/token-contract');
     });
 
     it('should allow overriding defaults with explicit URLs', () => {
       process.env.GALACHAIN_ENV = 'production';
       process.env.GALACHAIN_GATEWAY_URL = 'https://custom-gateway.example.com';
-      process.env.GALACHAIN_API_URL = 'https://custom-api.example.com';
 
       const config = configuration();
 
       expect(config.galachain.env).toBe('production');
       expect(config.galachain.gatewayUrl).toBe('https://custom-gateway.example.com');
-      expect(config.galachain.apiUrl).toBe('https://custom-api.example.com');
     });
   });
 });

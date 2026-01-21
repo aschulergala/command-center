@@ -10,9 +10,9 @@ This file tracks features that require manual testing with a real wallet.
 Please test wallet connection with MetaMask: connect, reject, disconnect, and auto-reconnect flows.
 
 ### Checklist
-- [ ] MetaMask popup appears when clicking Connect
-- [ ] Approving connection shows address in UI
-- [ ] Rejecting connection shows error message
+- [x] MetaMask popup appears when clicking Connect
+- [x] Approving connection shows address in UI
+- [x] Rejecting connection shows error message
 - [ ] Disconnect clears UI and localStorage
 - [ ] Page reload auto-reconnects if previously connected
 - [ ] Test with MetaMask not installed (shows install prompt)

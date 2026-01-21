@@ -284,7 +284,6 @@ describe('galachainClient', () => {
       expect(config).toEqual({
         env: 'stage',
         gatewayUrl: 'https://gateway-stage.galachain.com',
-        apiUrl: 'https://api-stage.galachain.com',
       })
     })
   })
@@ -296,8 +295,9 @@ describe('galachainClient', () => {
 
       createTokenApi({} as any)
 
+      // Gateway URL is now the complete token contract URL
       expect(TokenApi).toHaveBeenCalledWith(
-        'https://api-stage.galachain.com/asset/token-contract',
+        'https://gateway-stage.galachain.com',
         {}
       )
     })
