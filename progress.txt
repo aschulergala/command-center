@@ -1323,3 +1323,49 @@
   - Playwright window.__MOCK_WALLET__ pattern allows E2E testing without real wallet
   - Stories require correct prop types - check component defineProps for actual property names
 ---
+
+## Iteration 28 - export-placeholder
+- What was implemented:
+  - Created client/src/components/export/ExportComingSoon.vue with:
+    - Hero section with Coming Soon badge and description
+    - Export preview mockup with muted/disabled styling (opacity-75)
+      - Date range filter mockup (Start Date / End Date inputs)
+      - Token type filter mockup (Fungible Tokens / NFTs / All Transactions checkboxes)
+      - Transaction types filter mockup (Transfers / Mints / Burns / Allowances pills)
+      - Disabled "Export to CSV" button
+    - Planned Features list with icons and descriptions:
+      - Date Range Filters
+      - FT/NFT Selection
+      - CSV Download
+      - Transaction History
+    - Email notification signup form:
+      - Email input with validation
+      - Notify Me button with loading state
+      - Success message after submission
+      - Simulated submission (would connect to backend in production)
+    - Gray/muted color theme throughout to indicate coming soon status
+  - Updated client/src/views/ExportView.vue to use ExportComingSoon component
+  - Created client/src/components/export/ExportComingSoon.stories.ts with:
+    - Default story
+    - Mobile viewport story
+    - Tablet viewport story
+  - Created client/__tests__/components/export/ExportComingSoon.spec.ts with 24 tests covering:
+    - Rendering (7 tests): Coming Soon badge, heading, description, mockup sections
+    - Planned Features (5 tests): All 4 features listed
+    - Email Notification Signup (8 tests): Form rendering, validation, submission
+    - Styling (4 tests): Gray theme, disabled cursor, opacity
+- Files changed:
+  - client/src/components/export/ExportComingSoon.vue (new)
+  - client/src/components/export/ExportComingSoon.stories.ts (new)
+  - client/__tests__/components/export/ExportComingSoon.spec.ts (new)
+  - client/src/views/ExportView.vue (updated - uses ExportComingSoon component)
+  - IMPLEMENTATION_PLAN.json (updated - marked export-placeholder as passed)
+- GalaChain tools used: None (UI placeholder task)
+- Tests: All 1201 tests pass (1141 client + 60 server)
+- Learnings for future iterations:
+  - Coming soon pages benefit from visual mockups showing planned functionality
+  - Gray/muted styling clearly indicates disabled/upcoming features
+  - Email signup for notifications is a good engagement pattern for upcoming features
+  - Simulate form submissions in tests with vi.useFakeTimers() and vi.advanceTimersByTimeAsync()
+  - opacity-75 on container elements effectively mutes child content
+---
