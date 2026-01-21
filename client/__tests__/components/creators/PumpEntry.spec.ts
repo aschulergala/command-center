@@ -59,13 +59,13 @@ describe('PumpEntry.vue', () => {
       expect(link.exists()).toBe(true)
     })
 
-    it('links to pump.gala.games', () => {
+    it('links to pump.gala.com', () => {
       const wrapper = mount(PumpEntry, {
         props: { disabled: false }
       })
 
       const link = wrapper.find('a.pump-cta')
-      expect(link.attributes('href')).toBe('https://pump.gala.games')
+      expect(link.attributes('href')).toBe('https://pump.gala.com')
     })
 
     it('opens link in new tab', () => {

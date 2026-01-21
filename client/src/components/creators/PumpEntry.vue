@@ -15,7 +15,7 @@ defineEmits<{
 }>()
 
 // Pump URL - external link for now
-const PUMP_URL = 'https://pump.gala.games'
+const PUMP_URL = 'https://pump.gala.com'
 </script>
 
 <template>

@@ -10,3 +10,5 @@ Confusing and incorrect gateway URLs
 GALACHAIN_API_URL=https://api-stage.galachain.com
 
 Prompting for signatures very often (and on read ops)
+
+Incorrect URL for Pump, should be https://pump.gala.com/

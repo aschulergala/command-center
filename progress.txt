@@ -1399,3 +1399,38 @@
   - Production uses gateway-mainnet.galachain.com, stage uses gateway-testnet.galachain.com
   - The testnet URL includes the specific contract path for the GalaChainToken contract
 ---
+
+## Iteration 30 - Fix Read Operations (No Signing Required)
+- What was implemented:
+  - Read operations (FetchBalances, FetchAllowances) no longer require wallet signing
+  - Created unsignedPost() function that makes direct HTTP POST requests to the gateway
+  - fetchBalances() and fetchAllowances() now use unsignedPost() instead of TokenApi
+  - Changed function signatures: removed BrowserConnectClient parameter from read operations
+  - getBalances/getAllowances in useGalaChain composable now require owner address but NOT wallet connection
+  - Write operations (transfer, mint, burn, createCollection) still use TokenApi with signing
+- Files changed:
+  - client/src/lib/galachainClient.ts:
+    - Added GalaChainResponse<T> interface for HTTP response structure
+    - Added unsignedPost() for unsigned HTTP POST requests
+    - fetchBalances() now takes (owner, filters?) instead of (client, owner, filters?)
+    - fetchAllowances() now takes (grantedTo, filters?) instead of (client, grantedTo, filters?)
+    - Renamed executeApiCall to executeSignedApiCall for clarity
+  - client/src/composables/useGalaChain.ts:
+    - getBalances(owner, filters?) - requires address, NOT wallet connection
+    - getAllowances(grantedTo, filters?) - requires address, NOT wallet connection
+    - Write operations unchanged (still require wallet connection)
+  - client/src/composables/useFungibleTokens.ts - pass walletStore.address to getBalances/getAllowances
+  - client/src/composables/useNFTs.ts - pass walletStore.address to getBalances/getAllowances
+  - client/src/composables/useCreatorCollections.ts - pass walletStore.address to getBalances/getAllowances
+  - client/__tests__/lib/galachainClient.spec.ts - mock fetch instead of TokenApi for read operations
+  - client/__tests__/composables/useGalaChain.spec.ts - test read operations without wallet connection
+  - client/__tests__/mocks/galachain-client.ts - update mock signatures
+- GalaChain tools used: None (SDK pattern fix)
+- Tests: All 1204 tests pass (1146 client + 58 server)
+- Learnings for future iterations:
+  - GalaChain read operations do NOT require signing - use direct HTTP POST
+  - GalaChain write operations DO require signing - use TokenApi with BrowserConnectClient
+  - Successful responses have Status: 1, errors have Status: 0
+  - When fetching data for display, you can call the API without wallet connection
+  - Only prompt for wallet/signing when the user takes an action (transfer, mint, burn)
+---
