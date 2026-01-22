@@ -90,7 +90,7 @@ describe('useNFTMintAuthority', () => {
     it('should return true when user has NFT mint allowances', () => {
       const tokensStore = useTokensStore()
       tokensStore.$patch({
-        allowances: [mockNFTMintAllowance],
+        allowancesReceived: [mockNFTMintAllowance],
       })
 
       const { hasAnyMintAuthority } = useNFTMintAuthority()
@@ -100,7 +100,7 @@ describe('useNFTMintAuthority', () => {
     it('should return false when user has no mint allowances', () => {
       const tokensStore = useTokensStore()
       tokensStore.$patch({
-        allowances: [],
+        allowancesReceived: [],
       })
 
       const { hasAnyMintAuthority } = useNFTMintAuthority()
@@ -110,7 +110,7 @@ describe('useNFTMintAuthority', () => {
     it('should return false when allowance is expired', () => {
       const tokensStore = useTokensStore()
       tokensStore.$patch({
-        allowances: [{ ...mockNFTMintAllowance, isExpired: true }],
+        allowancesReceived: [{ ...mockNFTMintAllowance, isExpired: true }],
       })
 
       const { hasAnyMintAuthority } = useNFTMintAuthority()
@@ -120,7 +120,7 @@ describe('useNFTMintAuthority', () => {
     it('should return false when remaining allowance is zero', () => {
       const tokensStore = useTokensStore()
       tokensStore.$patch({
-        allowances: [{ ...mockNFTMintAllowance, quantityRemainingRaw: '0' }],
+        allowancesReceived: [{ ...mockNFTMintAllowance, quantityRemainingRaw: '0' }],
       })
 
       const { hasAnyMintAuthority } = useNFTMintAuthority()
@@ -134,7 +134,7 @@ describe('useNFTMintAuthority', () => {
       const nftsStore = useNFTsStore()
 
       tokensStore.$patch({
-        allowances: [mockNFTMintAllowance, mockNFTMintAllowance2],
+        allowancesReceived: [mockNFTMintAllowance, mockNFTMintAllowance2],
       })
       nftsStore.$patch({
         collections: [mockCollection, mockCollection2],
@@ -149,7 +149,7 @@ describe('useNFTMintAuthority', () => {
       const nftsStore = useNFTsStore()
 
       tokensStore.$patch({
-        allowances: [mockNFTMintAllowance],
+        allowancesReceived: [mockNFTMintAllowance],
       })
       nftsStore.$patch({
         collections: [], // No known collections
@@ -166,7 +166,7 @@ describe('useNFTMintAuthority', () => {
       const nftsStore = useNFTsStore()
 
       tokensStore.$patch({
-        allowances: [
+        allowancesReceived: [
           mockNFTMintAllowance,
           { ...mockNFTMintAllowance2, isExpired: true },
         ],
@@ -184,7 +184,7 @@ describe('useNFTMintAuthority', () => {
       const tokensStore = useTokensStore()
 
       tokensStore.$patch({
-        allowances: [
+        allowancesReceived: [
           mockNFTMintAllowance,
           { ...mockNFTMintAllowance2, quantityRemainingRaw: '0' },
         ],
@@ -199,7 +199,7 @@ describe('useNFTMintAuthority', () => {
     it('should return mint allowance for collection', () => {
       const tokensStore = useTokensStore()
       tokensStore.$patch({
-        allowances: [mockNFTMintAllowance],
+        allowancesReceived: [mockNFTMintAllowance],
       })
 
       const { getMintAllowance } = useNFTMintAuthority()
@@ -212,7 +212,7 @@ describe('useNFTMintAuthority', () => {
     it('should return null for collection without mint allowance', () => {
       const tokensStore = useTokensStore()
       tokensStore.$patch({
-        allowances: [mockNFTMintAllowance],
+        allowancesReceived: [mockNFTMintAllowance],
       })
 
       const { getMintAllowance } = useNFTMintAuthority()
@@ -226,7 +226,7 @@ describe('useNFTMintAuthority', () => {
     it('should return remaining allowance as BigNumber', () => {
       const tokensStore = useTokensStore()
       tokensStore.$patch({
-        allowances: [mockNFTMintAllowance],
+        allowancesReceived: [mockNFTMintAllowance],
       })
 
       const { getMintAllowanceRemaining } = useNFTMintAuthority()
@@ -239,7 +239,7 @@ describe('useNFTMintAuthority', () => {
     it('should return null when no allowance exists', () => {
       const tokensStore = useTokensStore()
       tokensStore.$patch({
-        allowances: [],
+        allowancesReceived: [],
       })
 
       const { getMintAllowanceRemaining } = useNFTMintAuthority()
@@ -251,7 +251,7 @@ describe('useNFTMintAuthority', () => {
     it('should return null when remaining is zero', () => {
       const tokensStore = useTokensStore()
       tokensStore.$patch({
-        allowances: [{ ...mockNFTMintAllowance, quantityRemainingRaw: '0' }],
+        allowancesReceived: [{ ...mockNFTMintAllowance, quantityRemainingRaw: '0' }],
       })
 
       const { getMintAllowanceRemaining } = useNFTMintAuthority()
@@ -265,7 +265,7 @@ describe('useNFTMintAuthority', () => {
     it('should return true when user can mint', () => {
       const tokensStore = useTokensStore()
       tokensStore.$patch({
-        allowances: [mockNFTMintAllowance],
+        allowancesReceived: [mockNFTMintAllowance],
       })
 
       const { canMintFromCollection } = useNFTMintAuthority()
@@ -275,7 +275,7 @@ describe('useNFTMintAuthority', () => {
     it('should return false when user cannot mint', () => {
       const tokensStore = useTokensStore()
       tokensStore.$patch({
-        allowances: [],
+        allowancesReceived: [],
       })
 
       const { canMintFromCollection } = useNFTMintAuthority()
@@ -287,7 +287,7 @@ describe('useNFTMintAuthority', () => {
     it('should return comprehensive mint authority info', () => {
       const tokensStore = useTokensStore()
       tokensStore.$patch({
-        allowances: [mockNFTMintAllowance],
+        allowancesReceived: [mockNFTMintAllowance],
       })
 
       const { getCollectionMintAuthority } = useNFTMintAuthority()
@@ -302,7 +302,7 @@ describe('useNFTMintAuthority', () => {
     it('should return info showing no mint authority', () => {
       const tokensStore = useTokensStore()
       tokensStore.$patch({
-        allowances: [],
+        allowancesReceived: [],
       })
 
       const { getCollectionMintAuthority } = useNFTMintAuthority()
@@ -318,7 +318,7 @@ describe('useNFTMintAuthority', () => {
     beforeEach(() => {
       const tokensStore = useTokensStore()
       tokensStore.$patch({
-        allowances: [mockNFTMintAllowance],
+        allowancesReceived: [mockNFTMintAllowance],
       })
     })
 
@@ -360,7 +360,7 @@ describe('useNFTMintAuthority', () => {
     it('should return false when no allowance exists', () => {
       const tokensStore = useTokensStore()
       tokensStore.$patch({
-        allowances: [],
+        allowancesReceived: [],
       })
 
       const { isValidMintQuantity } = useNFTMintAuthority()
@@ -381,7 +381,7 @@ describe('useNFTMintAuthority', () => {
       }
 
       tokensStore.$patch({
-        allowances: [mockNFTMintAllowance, fungibleMintAllowance],
+        allowancesReceived: [mockNFTMintAllowance, fungibleMintAllowance],
       })
 
       const { nftMintAllowances } = useNFTMintAuthority()
@@ -398,7 +398,7 @@ describe('useNFTMintAuthority', () => {
       }
 
       tokensStore.$patch({
-        allowances: [emptyInstanceAllowance],
+        allowancesReceived: [emptyInstanceAllowance],
       })
 
       const { nftMintAllowances } = useNFTMintAuthority()
@@ -408,7 +408,7 @@ describe('useNFTMintAuthority', () => {
     it('should exclude expired allowances', () => {
       const tokensStore = useTokensStore()
       tokensStore.$patch({
-        allowances: [
+        allowancesReceived: [
           mockNFTMintAllowance,
           { ...mockNFTMintAllowance2, isExpired: true },
         ],

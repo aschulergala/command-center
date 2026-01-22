@@ -6,9 +6,17 @@ import { AllowanceType } from '@gala-chain/api'
 interface Props {
   allowances: AllowanceDisplay[]
   isLoading?: boolean
+  /**
+   * View mode determines which party to display
+   * - 'received': Shows allowances granted TO the user (shows grantedBy as "From:")
+   * - 'granted': Shows allowances granted BY the user (shows grantedTo as "To:")
+   */
+  viewMode?: 'received' | 'granted'
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  viewMode: 'received'
+})
 
 // Group allowances by type
 const mintAllowances = computed(() =>
@@ -33,6 +41,18 @@ const transferAllowances = computed(() =>
 function truncateAddress(address: string): string {
   if (address.length <= 16) return address
   return `${address.slice(0, 8)}...${address.slice(-6)}`
+}
+
+/**
+ * Get the party label based on view mode
+ */
+const partyLabel = computed(() => props.viewMode === 'received' ? 'From' : 'To')
+
+/**
+ * Get the party address for an allowance based on view mode
+ */
+function getPartyAddress(allowance: AllowanceDisplay): string {
+  return props.viewMode === 'received' ? allowance.grantedBy : allowance.grantedTo
 }
 
 /**
@@ -128,7 +148,7 @@ function getAllowanceTypeColor(type: AllowanceType): string {
                   {{ allowance.type || allowance.collection }}
                 </p>
                 <p class="text-xs text-gray-500 dark:text-gray-400">
-                  From: {{ truncateAddress(allowance.grantedBy) }}
+                  {{ partyLabel }}: {{ truncateAddress(getPartyAddress(allowance)) }}
                 </p>
               </div>
               <div class="text-right">
@@ -171,7 +191,7 @@ function getAllowanceTypeColor(type: AllowanceType): string {
                   {{ allowance.type || allowance.collection }}
                 </p>
                 <p class="text-xs text-gray-500 dark:text-gray-400">
-                  From: {{ truncateAddress(allowance.grantedBy) }}
+                  {{ partyLabel }}: {{ truncateAddress(getPartyAddress(allowance)) }}
                 </p>
               </div>
               <div class="text-right">
@@ -216,7 +236,7 @@ function getAllowanceTypeColor(type: AllowanceType): string {
                   </span>
                 </div>
                 <p class="text-xs text-gray-500 dark:text-gray-400">
-                  From: {{ truncateAddress(allowance.grantedBy) }}
+                  {{ partyLabel }}: {{ truncateAddress(getPartyAddress(allowance)) }}
                 </p>
               </div>
               <div class="text-right">

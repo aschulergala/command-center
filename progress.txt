@@ -1543,3 +1543,82 @@
   - VeeValidate error messages only show after interaction - test with setValue() not just initial render
   - The new flow explicitly separates claiming a name from creating the collection
 ---
+
+## Iteration 34 - token-identification (Issue Fix)
+- What was implemented:
+  - Created getTokenIdentifier utility function in client/src/lib/tokenUtils.ts
+  - Logic: if collection !== 'Token', return collection; else return type
+  - Integrated into tokens.ts store's toFungibleTokenDisplay() for default name/symbol
+  - Integrated into nfts.ts store's toNFTDisplay() for default name/symbol
+  - When metadata is available, metadata name/symbol takes precedence
+  - When metadata is not available, getTokenIdentifier provides the fallback
+- Files changed:
+  - client/src/lib/tokenUtils.ts (new)
+  - client/__tests__/lib/tokenUtils.spec.ts (new)
+  - client/src/stores/tokens.ts (import and use getTokenIdentifier)
+  - client/src/stores/nfts.ts (import and use getTokenIdentifier)
+  - client/__tests__/stores/nfts.spec.ts (update test expectations for collection-based names)
+  - ISSUES_FIX_PLAN.json (marked token-identification as passed)
+  - manualTestingRequired.txt (added token-identification testing checklist)
+- GalaChain tools used: None
+- Tests: All 1208 tests pass (1150 client + 58 server)
+- Learnings for future iterations:
+  - Token identification logic: use collection if not 'Token', otherwise use type
+  - This convention exists because many tokens use 'Token' as a generic collection name
+  - Custom collections often have more meaningful names that should be displayed
+  - The utility function is reusable across both FT and NFT contexts
+  - Metadata name/symbol always takes precedence when available
+---
+
+
+## Iteration 35 - token-burn-option (Issue Fix)
+- What was implemented:
+  - Updated canBurn logic so users can burn tokens they own (have balance > 0) OR tokens they have burn authority for
+  - Previously canBurn was only true when user had burn allowance
+  - The logic change is: canBurnToken = hasBalance || hasBurnAllowance
+  - Updated display.ts comment to clarify canBurn now means "can burn (owns OR has authority)"
+  - Added comprehensive unit tests for the new canBurn logic
+- Files changed:
+  - client/src/stores/tokens.ts (updated toFungibleTokenDisplay canBurn logic)
+  - shared/types/display.ts (updated canBurn comment)
+  - client/__tests__/stores/tokens.spec.ts (new - 7 tests for canBurn logic)
+  - ISSUES_FIX_PLAN.json (marked token-burn-option as passed)
+  - manualTestingRequired.txt (added token-burn-option checklist)
+- GalaChain tools used: None
+- Tests: All 1215 tests pass (1157 client + 58 server)
+- Learnings for future iterations:
+  - GalaChain allows users to burn their own tokens without special burn authority
+  - The Burn button visibility should be based on ownership, not just authority
+  - canMint remains authority-only (users can't mint without mint allowance)
+  - canBurn differs from canMint - users can always burn what they own
+---
+
+## Iteration - allowances-bidirectional
+- What was implemented:
+  - Updated tokens store with allowancesReceived and allowancesGranted separate arrays
+  - Added computed allowances property combining both for backward compatibility
+  - Updated useFungibleTokens composable to expose allowancesReceived and allowancesGranted
+  - Updated AllowanceList.vue with viewMode prop ('received' or 'granted')
+  - AllowanceList dynamically shows 'From:' or 'To:' based on viewMode
+  - Updated TokensView.vue with Received/Granted sub-tabs under Allowances
+  - Added API limitation notice on Granted tab explaining feature not yet available
+  - Updated all tests using allowances: to allowancesReceived:
+  - Added bidirectional allowances tests to tokens.spec.ts
+- Files changed:
+  - client/src/stores/tokens.ts (allowancesReceived, allowancesGranted, setAllowancesReceived, setAllowancesGranted)
+  - client/src/composables/useFungibleTokens.ts (expose allowancesReceived, allowancesGranted)
+  - client/src/components/tokens/AllowanceList.vue (viewMode prop, partyLabel computed, getPartyAddress)
+  - client/src/views/TokensView.vue (Received/Granted sub-tabs, API limitation notice)
+  - client/__tests__/stores/tokens.spec.ts (bidirectional allowance tests)
+  - client/__tests__/composables/useTokenAuthority.spec.ts (updated to use allowancesReceived)
+  - client/__tests__/composables/useNFTMintAuthority.spec.ts (updated to use allowancesReceived)
+- GalaChain API finding:
+  - FetchAllowancesDto requires grantedTo as a REQUIRED parameter
+  - Cannot query allowances granted BY user without specifying who they were granted TO
+  - Infrastructure is ready for when API adds support
+- Tests: All 1217 tests pass (1159 client + 58 server)
+- Learnings for future iterations:
+  - Pinia computed properties cannot be directly patched in tests - patch the underlying refs
+  - GalaChain API requires grantedTo for FetchAllowances - grantedBy is optional filter
+  - Plan for API limitations with informative UI messages rather than hiding features
+---

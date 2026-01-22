@@ -186,7 +186,11 @@ function toAllowanceDisplay(allowance: TokenAllowance): AllowanceDisplay {
 export const useTokensStore = defineStore('tokens', () => {
   // State
   const tokens = ref<FungibleTokenDisplay[]>([])
-  const allowances = ref<AllowanceDisplay[]>([])
+  // Allowances granted TO the user (user is grantedTo)
+  const allowancesReceived = ref<AllowanceDisplay[]>([])
+  // Allowances granted BY the user (user is grantedBy)
+  // Note: GalaChain API currently doesn't support querying by grantedBy without grantedTo
+  const allowancesGranted = ref<AllowanceDisplay[]>([])
   const isLoading = ref(false)
   const isLoadingAllowances = ref(false)
   const error = ref<string | null>(null)
@@ -271,9 +275,9 @@ export const useTokensStore = defineStore('tokens', () => {
   }
 
   /**
-   * Set the raw allowances
+   * Set the raw allowances received (granted TO the user)
    */
-  function setAllowances(
+  function setAllowancesReceived(
     allAllowances: TokenAllowance[],
     mintType: AllowanceType,
     burnType: AllowanceType
@@ -282,10 +286,20 @@ export const useTokensStore = defineStore('tokens', () => {
     rawBurnAllowances = allAllowances.filter(a => a.allowanceType === burnType)
 
     // Convert all allowances to display format
-    allowances.value = allAllowances.map(toAllowanceDisplay)
+    allowancesReceived.value = allAllowances.map(toAllowanceDisplay)
 
     // Re-process tokens to update canMint/canBurn flags
     processTokens()
+  }
+
+  /**
+   * Set the raw allowances granted (granted BY the user)
+   * Note: This may be empty if the API doesn't support querying by grantedBy
+   */
+  function setAllowancesGranted(
+    allAllowances: TokenAllowance[]
+  ): void {
+    allowancesGranted.value = allAllowances.map(toAllowanceDisplay)
   }
 
   /**
@@ -355,7 +369,8 @@ export const useTokensStore = defineStore('tokens', () => {
    */
   function clearTokens(): void {
     tokens.value = []
-    allowances.value = []
+    allowancesReceived.value = []
+    allowancesGranted.value = []
     rawBalances = []
     rawBalancesWithMetadata = []
     rawMintAllowances = []
@@ -380,10 +395,15 @@ export const useTokensStore = defineStore('tokens', () => {
     return Date.now() - lastFetched.value > 30000
   }
 
+  // Computed: combined allowances for backward compatibility
+  const allowances = computed(() => [...allowancesReceived.value, ...allowancesGranted.value])
+
   return {
     // State
     tokens,
-    allowances,
+    allowancesReceived,
+    allowancesGranted,
+    allowances, // Combined for backward compatibility
     isLoading,
     isLoadingAllowances,
     error,
@@ -400,7 +420,8 @@ export const useTokensStore = defineStore('tokens', () => {
     // Actions
     setBalances,
     setBalancesWithMetadata,
-    setAllowances,
+    setAllowancesReceived,
+    setAllowancesGranted,
     setLoading,
     setLoadingAllowances,
     setError,

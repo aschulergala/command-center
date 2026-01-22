@@ -20,8 +20,8 @@
         "Add toggle or tabs to switch between 'Received' and 'Granted' allowances",
         "Handle edge case where API doesn't support grantedBy query (show message if not possible)"
       ],
-      "passes": false,
-      "notes": "May be limited by API - the issue notes 'not possible to get the granted by without a granted to'. Need to investigate API capabilities first.",
+      "passes": true,
+      "notes": "Implemented bidirectional allowances support. The GalaChain FetchAllowances API requires grantedTo as a required parameter, so we cannot directly query for allowances granted BY the user without specifying who they were granted TO. Implemented UI with two tabs: 'Received' (works fully) and 'Granted' (shows informational message about API limitation). Store now maintains allowancesReceived and allowancesGranted separately, with a combined allowances computed property for backward compatibility. AllowanceList component accepts viewMode prop to show appropriate party (From/To). Infrastructure is in place to support granted allowances when the API adds that capability.",
       "testing": {
         "automated": [
           "Unit test: fetchAllowances with grantedBy parameter",
@@ -32,7 +32,9 @@
           "REQUIRED: Verify allowances granted TO user display correctly",
           "REQUIRED: Verify allowances granted BY user display correctly (if API supports)"
         ]
-      }
+      },
+      "manualTestingRequired": true,
+      "manualTestingPrompt": "Please verify that the Allowances tab shows Received/Granted sub-tabs and that received allowances display correctly with From: [grantor] information."
     },
     {
       "category": "balances-with-metadata",

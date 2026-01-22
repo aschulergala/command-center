@@ -116,8 +116,9 @@ describe('useTokenAuthority', () => {
   describe('getMintAllowance', () => {
     it('should return mint allowance when found in store', () => {
       const store = useTokensStore()
+      // Use allowancesReceived since allowances is now a computed property
       store.$patch({
-        allowances: [mockMintAllowance],
+        allowancesReceived: [mockMintAllowance],
       })
 
       const { getMintAllowance } = useTokenAuthority()
@@ -129,7 +130,7 @@ describe('useTokenAuthority', () => {
     it('should return null when no mint allowance exists', () => {
       const store = useTokensStore()
       store.$patch({
-        allowances: [mockBurnAllowance], // Only burn, no mint
+        allowancesReceived: [mockBurnAllowance], // Only burn, no mint
       })
 
       const { getMintAllowance } = useTokenAuthority()
@@ -141,7 +142,7 @@ describe('useTokenAuthority', () => {
     it('should return null for different token', () => {
       const store = useTokensStore()
       store.$patch({
-        allowances: [mockMintAllowance],
+        allowancesReceived: [mockMintAllowance],
       })
 
       const { getMintAllowance } = useTokenAuthority()
@@ -153,7 +154,7 @@ describe('useTokenAuthority', () => {
     it('should filter out expired allowances', () => {
       const store = useTokensStore()
       store.$patch({
-        allowances: [{ ...mockMintAllowance, isExpired: true }],
+        allowancesReceived: [{ ...mockMintAllowance, isExpired: true }],
       })
 
       const { getMintAllowance } = useTokenAuthority()
@@ -167,7 +168,7 @@ describe('useTokenAuthority', () => {
     it('should return burn allowance when found in store', () => {
       const store = useTokensStore()
       store.$patch({
-        allowances: [mockBurnAllowance],
+        allowancesReceived: [mockBurnAllowance],
       })
 
       const { getBurnAllowance } = useTokenAuthority()
@@ -179,7 +180,7 @@ describe('useTokenAuthority', () => {
     it('should return null when no burn allowance exists', () => {
       const store = useTokensStore()
       store.$patch({
-        allowances: [mockMintAllowance], // Only mint, no burn
+        allowancesReceived: [mockMintAllowance], // Only mint, no burn
       })
 
       const { getBurnAllowance } = useTokenAuthority()
@@ -193,7 +194,7 @@ describe('useTokenAuthority', () => {
     it('should return remaining mint allowance as BigNumber', () => {
       const store = useTokensStore()
       store.$patch({
-        allowances: [mockMintAllowance],
+        allowancesReceived: [mockMintAllowance],
       })
 
       const { getMintAllowanceRemaining } = useTokenAuthority()
@@ -206,7 +207,7 @@ describe('useTokenAuthority', () => {
     it('should return null when no allowance exists', () => {
       const store = useTokensStore()
       store.$patch({
-        allowances: [],
+        allowancesReceived: [],
       })
 
       const { getMintAllowanceRemaining } = useTokenAuthority()
@@ -218,7 +219,7 @@ describe('useTokenAuthority', () => {
     it('should return null when remaining allowance is zero or negative', () => {
       const store = useTokensStore()
       store.$patch({
-        allowances: [{
+        allowancesReceived: [{
           ...mockMintAllowance,
           quantityRemainingRaw: '0',
         }],
@@ -235,7 +236,7 @@ describe('useTokenAuthority', () => {
     it('should return comprehensive authority info', () => {
       const store = useTokensStore()
       store.$patch({
-        allowances: [mockMintAllowance, mockBurnAllowance],
+        allowancesReceived: [mockMintAllowance, mockBurnAllowance],
       })
 
       const tokenWithBurn = { ...mockToken, canBurn: true }
@@ -254,7 +255,7 @@ describe('useTokenAuthority', () => {
     it('should return true for valid amount within allowance', () => {
       const store = useTokensStore()
       store.$patch({
-        allowances: [mockMintAllowance],
+        allowancesReceived: [mockMintAllowance],
       })
 
       const { isValidMintAmount } = useTokenAuthority()
@@ -264,7 +265,7 @@ describe('useTokenAuthority', () => {
     it('should return true for amount equal to allowance', () => {
       const store = useTokensStore()
       store.$patch({
-        allowances: [mockMintAllowance],
+        allowancesReceived: [mockMintAllowance],
       })
 
       const { isValidMintAmount } = useTokenAuthority()
@@ -274,7 +275,7 @@ describe('useTokenAuthority', () => {
     it('should return false for amount exceeding allowance', () => {
       const store = useTokensStore()
       store.$patch({
-        allowances: [mockMintAllowance],
+        allowancesReceived: [mockMintAllowance],
       })
 
       const { isValidMintAmount } = useTokenAuthority()
@@ -284,7 +285,7 @@ describe('useTokenAuthority', () => {
     it('should return false for zero amount', () => {
       const store = useTokensStore()
       store.$patch({
-        allowances: [mockMintAllowance],
+        allowancesReceived: [mockMintAllowance],
       })
 
       const { isValidMintAmount } = useTokenAuthority()
@@ -294,7 +295,7 @@ describe('useTokenAuthority', () => {
     it('should return false for negative amount', () => {
       const store = useTokensStore()
       store.$patch({
-        allowances: [mockMintAllowance],
+        allowancesReceived: [mockMintAllowance],
       })
 
       const { isValidMintAmount } = useTokenAuthority()
@@ -304,7 +305,7 @@ describe('useTokenAuthority', () => {
     it('should return false for invalid number', () => {
       const store = useTokensStore()
       store.$patch({
-        allowances: [mockMintAllowance],
+        allowancesReceived: [mockMintAllowance],
       })
 
       const { isValidMintAmount } = useTokenAuthority()
@@ -314,7 +315,7 @@ describe('useTokenAuthority', () => {
     it('should return false when no mint allowance exists', () => {
       const store = useTokensStore()
       store.$patch({
-        allowances: [],
+        allowancesReceived: [],
       })
 
       const { isValidMintAmount } = useTokenAuthority()
@@ -382,7 +383,7 @@ describe('useTokenAuthority', () => {
       const expiredAllowance = { ...mockMintAllowance, isExpired: true }
       const store = useTokensStore()
       store.$patch({
-        allowances: [mockMintAllowance, expiredAllowance],
+        allowancesReceived: [mockMintAllowance, expiredAllowance],
       })
 
       const { mintAllowances } = useTokenAuthority()
@@ -393,7 +394,7 @@ describe('useTokenAuthority', () => {
       const expiredAllowance = { ...mockBurnAllowance, isExpired: true }
       const store = useTokensStore()
       store.$patch({
-        allowances: [mockBurnAllowance, expiredAllowance],
+        allowancesReceived: [mockBurnAllowance, expiredAllowance],
       })
 
       const { burnAllowances } = useTokenAuthority()

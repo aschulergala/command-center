@@ -21,7 +21,9 @@ export function useFungibleTokens() {
 
   // Computed properties from store
   const tokens = computed(() => tokensStore.sortedTokens)
-  const allowances = computed(() => tokensStore.allowances)
+  const allowances = computed(() => tokensStore.allowances) // Combined for backward compatibility
+  const allowancesReceived = computed(() => tokensStore.allowancesReceived)
+  const allowancesGranted = computed(() => tokensStore.allowancesGranted)
   const isLoading = computed(() => tokensStore.isLoading)
   const isLoadingAllowances = computed(() => tokensStore.isLoadingAllowances)
   const error = computed(() => tokensStore.error)
@@ -65,6 +67,11 @@ export function useFungibleTokens() {
 
   /**
    * Fetch allowances from GalaChain
+   * Fetches allowances granted TO the user (received allowances)
+   *
+   * Note: GalaChain FetchAllowances API requires grantedTo, so we cannot
+   * directly query for allowances granted BY the user. The "granted" tab
+   * will display an informational message about this limitation.
    */
   async function fetchAllowances(): Promise<void> {
     if (!walletStore.connected || !walletStore.address) {
@@ -74,17 +81,22 @@ export function useFungibleTokens() {
     tokensStore.setLoadingAllowances(true)
 
     try {
+      // Fetch allowances granted TO the user (user is grantedTo)
       const result = await galaChain.getAllowances(walletStore.address!)
 
       if (result.success) {
         // Pass the allowances with the allowance type enums
-        tokensStore.setAllowances(
+        tokensStore.setAllowancesReceived(
           result.data,
           AllowanceType.Mint,
           AllowanceType.Burn
         )
       }
-      // Note: We don't set error here as allowances are supplementary
+
+      // Note: GalaChain API doesn't support querying by grantedBy without grantedTo
+      // So we can't fetch allowances granted BY the user
+      // We set an empty array for granted allowances
+      tokensStore.setAllowancesGranted([])
     } catch {
       // Silently fail for allowances - they're supplementary data
       console.warn('Failed to fetch allowances')
@@ -159,7 +171,9 @@ export function useFungibleTokens() {
   return {
     // State from store
     tokens,
-    allowances,
+    allowances, // Combined for backward compatibility
+    allowancesReceived,
+    allowancesGranted,
     isLoading,
     isLoadingAllowances,
     error,

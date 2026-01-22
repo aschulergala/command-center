@@ -13,7 +13,8 @@ import type { FungibleTokenDisplay } from '@shared/types/display'
 
 const {
   tokens,
-  allowances,
+  allowancesReceived,
+  allowancesGranted,
   isLoading,
   isLoadingAllowances,
   error,
@@ -23,8 +24,11 @@ const {
   setSort,
 } = useFungibleTokens()
 
-// Active tab for allowances section
+// Active tab for main view: 'balances' or 'allowances'
 const showAllowances = ref(false)
+
+// Sub-tab for allowances: 'received' (granted TO user) or 'granted' (granted BY user)
+const allowancesTab = ref<'received' | 'granted'>('received')
 
 // Transfer modal state
 const transferModalOpen = ref(false)
@@ -175,13 +179,13 @@ async function handleRefresh(): Promise<void> {
           >
             Allowances
             <span
-              v-if="allowances.length > 0"
+              v-if="allowancesReceived.length > 0"
               class="ml-1 px-1.5 py-0.5 text-xs rounded-full"
               :class="showAllowances
                 ? 'bg-white/20 text-white'
                 : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'"
             >
-              {{ allowances.length }}
+              {{ allowancesReceived.length }}
             </span>
           </button>
         </div>
@@ -231,10 +235,89 @@ async function handleRefresh(): Promise<void> {
 
       <!-- Allowances Tab -->
       <div v-else>
-        <AllowanceList
-          :allowances="allowances"
-          :is-loading="isLoadingAllowances"
-        />
+        <!-- Allowances Sub-tabs: Received / Granted -->
+        <div class="mb-4 border-b border-gray-200 dark:border-gray-700">
+          <nav class="flex gap-4" aria-label="Allowances tabs">
+            <button
+              class="pb-2 text-sm font-medium border-b-2 transition-colors"
+              :class="allowancesTab === 'received'
+                ? 'border-gala-primary text-gala-primary'
+                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'"
+              @click="allowancesTab = 'received'"
+            >
+              Received
+              <span
+                v-if="allowancesReceived.length > 0"
+                class="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-gray-100 dark:bg-gray-800"
+              >
+                {{ allowancesReceived.length }}
+              </span>
+            </button>
+            <button
+              class="pb-2 text-sm font-medium border-b-2 transition-colors"
+              :class="allowancesTab === 'granted'
+                ? 'border-gala-primary text-gala-primary'
+                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'"
+              @click="allowancesTab = 'granted'"
+            >
+              Granted
+              <span
+                v-if="allowancesGranted.length > 0"
+                class="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-gray-100 dark:bg-gray-800"
+              >
+                {{ allowancesGranted.length }}
+              </span>
+            </button>
+          </nav>
+        </div>
+
+        <!-- Received Allowances (granted TO the user) -->
+        <div v-if="allowancesTab === 'received'">
+          <AllowanceList
+            :allowances="allowancesReceived"
+            :is-loading="isLoadingAllowances"
+            view-mode="received"
+          />
+        </div>
+
+        <!-- Granted Allowances (granted BY the user) -->
+        <div v-else>
+          <!-- API Limitation Notice -->
+          <div class="card bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 mb-4">
+            <div class="flex items-start gap-3">
+              <svg
+                class="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <div>
+                <h4 class="font-medium text-amber-800 dark:text-amber-300">
+                  Feature Not Yet Available
+                </h4>
+                <p class="text-sm text-amber-700 dark:text-amber-400 mt-1">
+                  Viewing allowances you've granted to others is not currently supported by the GalaChain API.
+                  This feature will be available when the API adds support for querying by grantor.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Show any granted allowances if we have them (future-proofing) -->
+          <AllowanceList
+            v-if="allowancesGranted.length > 0"
+            :allowances="allowancesGranted"
+            :is-loading="isLoadingAllowances"
+            view-mode="granted"
+          />
+        </div>
       </div>
     </template>
 

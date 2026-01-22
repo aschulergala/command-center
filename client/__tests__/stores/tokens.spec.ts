@@ -26,7 +26,7 @@ describe('tokens store', () => {
       ]
 
       store.setBalances(balances as any)
-      store.setAllowances([], AllowanceType.Mint, AllowanceType.Burn)
+      store.setAllowancesReceived([], AllowanceType.Mint, AllowanceType.Burn)
 
       expect(store.tokens).toHaveLength(1)
       expect(store.tokens[0].canBurn).toBe(true)
@@ -65,7 +65,7 @@ describe('tokens store', () => {
       ]
 
       store.setBalances(balances as any)
-      store.setAllowances(burnAllowances as any, AllowanceType.Mint, AllowanceType.Burn)
+      store.setAllowancesReceived(burnAllowances as any, AllowanceType.Mint, AllowanceType.Burn)
 
       expect(store.tokens).toHaveLength(1)
       expect(store.tokens[0].canBurn).toBe(true)
@@ -103,7 +103,7 @@ describe('tokens store', () => {
       ]
 
       store.setBalances(balances as any)
-      store.setAllowances(burnAllowances as any, AllowanceType.Mint, AllowanceType.Burn)
+      store.setAllowancesReceived(burnAllowances as any, AllowanceType.Mint, AllowanceType.Burn)
 
       expect(store.tokens).toHaveLength(1)
       expect(store.tokens[0].canBurn).toBe(true)
@@ -125,7 +125,7 @@ describe('tokens store', () => {
       ]
 
       store.setBalances(balances as any)
-      store.setAllowances([], AllowanceType.Mint, AllowanceType.Burn)
+      store.setAllowancesReceived([], AllowanceType.Mint, AllowanceType.Burn)
 
       expect(store.tokens).toHaveLength(1)
       expect(store.tokens[0].canBurn).toBe(false)
@@ -147,7 +147,7 @@ describe('tokens store', () => {
       ]
 
       store.setBalances(balances as any)
-      store.setAllowances([], AllowanceType.Mint, AllowanceType.Burn)
+      store.setAllowancesReceived([], AllowanceType.Mint, AllowanceType.Burn)
 
       expect(store.tokens).toHaveLength(1)
       expect(store.tokens[0].canMint).toBe(false)
@@ -201,7 +201,7 @@ describe('tokens store', () => {
       ]
 
       store.setBalances(balances as any)
-      store.setAllowances(burnAllowances as any, AllowanceType.Mint, AllowanceType.Burn)
+      store.setAllowancesReceived(burnAllowances as any, AllowanceType.Mint, AllowanceType.Burn)
 
       expect(store.tokens).toHaveLength(3)
 
@@ -239,10 +239,102 @@ describe('tokens store', () => {
       ]
 
       store.setBalances(balances as any)
-      store.setAllowances([], AllowanceType.Mint, AllowanceType.Burn)
+      store.setAllowancesReceived([], AllowanceType.Mint, AllowanceType.Burn)
 
       expect(store.burnableTokens).toHaveLength(1)
       expect(store.burnableTokens[0].collection).toBe('GALA')
+    })
+  })
+
+  describe('bidirectional allowances', () => {
+    it('stores received allowances separately from granted allowances', () => {
+      const store = useTokensStore()
+
+      const receivedAllowances = [
+        {
+          collection: 'GALA',
+          category: 'Unit',
+          type: 'GALA',
+          additionalKey: '',
+          allowanceType: AllowanceType.Mint,
+          grantedBy: 'client|authority',
+          grantedTo: 'client|user',
+          quantity: new BigNumber('1000'),
+          quantitySpent: new BigNumber('0'),
+          uses: new BigNumber('0'),
+          usesSpent: new BigNumber('0'),
+          instance: new BigNumber('0'),
+          expires: 0,
+        },
+      ]
+
+      const grantedAllowances = [
+        {
+          collection: 'SILK',
+          category: 'Unit',
+          type: 'SILK',
+          additionalKey: '',
+          allowanceType: AllowanceType.Transfer,
+          grantedBy: 'client|user',
+          grantedTo: 'client|other',
+          quantity: new BigNumber('500'),
+          quantitySpent: new BigNumber('0'),
+          uses: new BigNumber('0'),
+          usesSpent: new BigNumber('0'),
+          instance: new BigNumber('0'),
+          expires: 0,
+        },
+      ]
+
+      store.setAllowancesReceived(receivedAllowances as any, AllowanceType.Mint, AllowanceType.Burn)
+      store.setAllowancesGranted(grantedAllowances as any)
+
+      // Check received allowances
+      expect(store.allowancesReceived).toHaveLength(1)
+      expect(store.allowancesReceived[0].collection).toBe('GALA')
+      expect(store.allowancesReceived[0].grantedBy).toBe('client|authority')
+
+      // Check granted allowances
+      expect(store.allowancesGranted).toHaveLength(1)
+      expect(store.allowancesGranted[0].collection).toBe('SILK')
+      expect(store.allowancesGranted[0].grantedTo).toBe('client|other')
+
+      // Check combined allowances (backward compatibility)
+      expect(store.allowances).toHaveLength(2)
+    })
+
+    it('clears both received and granted allowances on clearTokens', () => {
+      const store = useTokensStore()
+
+      const receivedAllowances = [
+        {
+          collection: 'GALA',
+          category: 'Unit',
+          type: 'GALA',
+          additionalKey: '',
+          allowanceType: AllowanceType.Mint,
+          grantedBy: 'client|authority',
+          grantedTo: 'client|user',
+          quantity: new BigNumber('1000'),
+          quantitySpent: new BigNumber('0'),
+          uses: new BigNumber('0'),
+          usesSpent: new BigNumber('0'),
+          instance: new BigNumber('0'),
+          expires: 0,
+        },
+      ]
+
+      store.setAllowancesReceived(receivedAllowances as any, AllowanceType.Mint, AllowanceType.Burn)
+      store.setAllowancesGranted(receivedAllowances as any)
+
+      expect(store.allowancesReceived).toHaveLength(1)
+      expect(store.allowancesGranted).toHaveLength(1)
+
+      store.clearTokens()
+
+      expect(store.allowancesReceived).toHaveLength(0)
+      expect(store.allowancesGranted).toHaveLength(0)
+      expect(store.allowances).toHaveLength(0)
     })
   })
 })
