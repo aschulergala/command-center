@@ -11,6 +11,23 @@ import type { CollectionDisplay } from '@shared/types/display'
 export type CollectionSortOption = 'name-asc' | 'name-desc' | 'minted-desc' | 'minted-asc'
 
 /**
+ * Status of a collection in the creation flow
+ */
+export type CollectionStatus = 'claimed' | 'created'
+
+/**
+ * Claimed collection - authorization granted but not yet created
+ */
+export interface ClaimedCollectionDisplay {
+  /** Collection name that was claimed */
+  collection: string
+  /** Users authorized to create this collection */
+  authorizedUsers: string[]
+  /** Status in the creation flow */
+  status: CollectionStatus
+}
+
+/**
  * Extended collection display with creator-specific data
  */
 export interface CreatorCollectionDisplay extends CollectionDisplay {
@@ -23,6 +40,8 @@ export interface CreatorCollectionDisplay extends CollectionDisplay {
   classes: CreatorClassDisplay[]
   /** Is the class list expanded in the UI */
   isExpanded: boolean
+  /** Status - created collections have this as 'created' */
+  status: CollectionStatus
 }
 
 /**
@@ -128,6 +147,7 @@ function toCreatorCollectionDisplay(
     hasUnlimitedMint,
     classes: [], // To be populated by class management feature
     isExpanded: false,
+    status: 'created' as CollectionStatus, // Collections from allowances are created
   }
 }
 
@@ -137,6 +157,7 @@ function toCreatorCollectionDisplay(
 export const useCreatorCollectionsStore = defineStore('creatorCollections', () => {
   // State
   const collections = ref<CreatorCollectionDisplay[]>([])
+  const claimedCollections = ref<ClaimedCollectionDisplay[]>([])
   const isLoading = ref(false)
   const error = ref<string | null>(null)
   const sortBy = ref<CollectionSortOption>('name-asc')
@@ -167,6 +188,12 @@ export const useCreatorCollectionsStore = defineStore('creatorCollections', () =
   const hasCollections = computed(() => collections.value.length > 0)
 
   const totalCollectionCount = computed(() => collections.value.length)
+
+  const hasClaimedCollections = computed(() => claimedCollections.value.length > 0)
+
+  const pendingClaimedCollections = computed(() =>
+    claimedCollections.value.filter(c => c.status === 'claimed')
+  )
 
   // Actions
 
@@ -245,10 +272,55 @@ export const useCreatorCollectionsStore = defineStore('creatorCollections', () =
   }
 
   /**
+   * Set claimed collections from NFT collection authorizations
+   */
+  function setClaimedCollections(claimed: Array<{ collection: string; authorizedUsers: string[] }>): void {
+    // Filter out collections that are already created (have mint allowances)
+    const createdCollectionNames = new Set(collections.value.map(c => c.collection))
+
+    claimedCollections.value = claimed.map(c => ({
+      collection: c.collection,
+      authorizedUsers: c.authorizedUsers,
+      status: createdCollectionNames.has(c.collection) ? 'created' as CollectionStatus : 'claimed' as CollectionStatus,
+    }))
+  }
+
+  /**
+   * Add a newly claimed collection
+   */
+  function addClaimedCollection(collection: string, authorizedUser: string): void {
+    // Check if already exists
+    const existing = claimedCollections.value.find(c => c.collection === collection)
+    if (existing) {
+      if (!existing.authorizedUsers.includes(authorizedUser)) {
+        existing.authorizedUsers.push(authorizedUser)
+      }
+      return
+    }
+
+    claimedCollections.value.push({
+      collection,
+      authorizedUsers: [authorizedUser],
+      status: 'claimed',
+    })
+  }
+
+  /**
+   * Mark a claimed collection as created
+   */
+  function markCollectionCreated(collection: string): void {
+    const claimed = claimedCollections.value.find(c => c.collection === collection)
+    if (claimed) {
+      claimed.status = 'created'
+    }
+  }
+
+  /**
    * Clear all collection data
    */
   function clearCollections(): void {
     collections.value = []
+    claimedCollections.value = []
     rawMintAllowances = []
     rawBalances = []
     lastFetched.value = null
@@ -273,6 +345,7 @@ export const useCreatorCollectionsStore = defineStore('creatorCollections', () =
   return {
     // State
     collections,
+    claimedCollections,
     isLoading,
     error,
     sortBy,
@@ -282,10 +355,15 @@ export const useCreatorCollectionsStore = defineStore('creatorCollections', () =
     sortedCollections,
     hasCollections,
     totalCollectionCount,
+    hasClaimedCollections,
+    pendingClaimedCollections,
 
     // Actions
     setAllowances,
     setBalances,
+    setClaimedCollections,
+    addClaimedCollection,
+    markCollectionCreated,
     setLoading,
     setError,
     setSort,

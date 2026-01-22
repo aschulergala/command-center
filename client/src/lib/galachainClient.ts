@@ -426,6 +426,149 @@ export async function createCollection(
 }
 
 // ============================================================================
+// NFT Collection Authorization Operations
+// ============================================================================
+
+/**
+ * NFT Collection Authorization - represents a claimed collection name
+ */
+export interface NftCollectionAuthorization {
+  collection: string
+  authorizedUsers: string[]
+}
+
+/**
+ * Response from FetchNftCollectionAuthorizationsWithPagination
+ */
+export interface FetchNftCollectionAuthorizationsResponse {
+  results: NftCollectionAuthorization[]
+  nextPageBookmark?: string
+}
+
+/**
+ * Input for creating an NFT collection
+ */
+export interface CreateNftCollectionInput {
+  /** Collection name - must match an authorization the user has been granted */
+  collection: string
+  /** Category of the NFT collection */
+  category: string
+  /** Type of the NFT collection */
+  type: string
+  /** Additional key for the NFT collection */
+  additionalKey: string
+  /** Human-readable name */
+  name: string
+  /** Token symbol */
+  symbol: string
+  /** Description of the NFT collection */
+  description: string
+  /** Image URL for the NFT collection */
+  image: string
+  /** Optional metadata address */
+  metadataAddress?: string
+  /** Optional contract address */
+  contractAddress?: string
+  /** Optional rarity */
+  rarity?: string
+  /** Maximum supply (default: unlimited) */
+  maxSupply?: BigNumber | string | number
+  /** Maximum capacity per wallet (default: unlimited) */
+  maxCapacity?: BigNumber | string | number
+  /** List of user aliases who should become token authorities (defaults to caller) */
+  authorities?: string[]
+}
+
+/**
+ * Fetch NFT collection authorizations for the current user
+ * This is a read-only operation that does NOT require wallet signing
+ * Returns collections that the user has been authorized to create
+ */
+export async function fetchNftCollectionAuthorizations(
+  options?: {
+    bookmark?: string
+    limit?: number
+  }
+): Promise<FetchNftCollectionAuthorizationsResponse> {
+  const dto = {
+    ...(options?.bookmark && { bookmark: options.bookmark }),
+    ...(options?.limit && { limit: options.limit }),
+  }
+
+  return unsignedPost<FetchNftCollectionAuthorizationsResponse>(
+    'FetchNftCollectionAuthorizationsWithPagination',
+    dto
+  )
+}
+
+/**
+ * Grant NFT collection authorization (claim a collection name)
+ * This is the first step in creating an NFT collection
+ * Requires wallet connection for signing
+ */
+export async function grantNftCollectionAuthorization(
+  client: BrowserConnectClient,
+  collection: string,
+  authorizedUser: string
+): Promise<unknown> {
+  const tokenApi = createTokenApi(client)
+
+  const dto = {
+    collection,
+    authorizedUser: authorizedUser as UserRef,
+    uniqueKey: generateUniqueKey(),
+  }
+
+  logRequest('GrantNftCollectionAuthorization', dto)
+
+  return executeSignedApiCall(
+    () => (tokenApi as unknown as { GrantNftCollectionAuthorization: (dto: unknown) => Promise<{ Data: unknown }> }).GrantNftCollectionAuthorization(dto),
+    'GrantNftCollectionAuthorization'
+  )
+}
+
+/**
+ * Create an NFT collection from a claimed authorization
+ * This is the second step in creating an NFT collection
+ * The collection name must match an authorization the user has been granted
+ * Requires wallet connection for signing
+ */
+export async function createNftCollection(
+  client: BrowserConnectClient,
+  input: CreateNftCollectionInput
+): Promise<TokenClass> {
+  const tokenApi = createTokenApi(client)
+
+  const dto = {
+    collection: input.collection,
+    category: input.category,
+    type: input.type,
+    additionalKey: input.additionalKey,
+    name: input.name,
+    symbol: input.symbol,
+    description: input.description,
+    image: input.image,
+    uniqueKey: generateUniqueKey(),
+    // Optional fields
+    ...(input.metadataAddress && { metadataAddress: input.metadataAddress }),
+    ...(input.contractAddress && { contractAddress: input.contractAddress }),
+    ...(input.rarity && { rarity: input.rarity }),
+    ...(input.maxSupply !== undefined && { maxSupply: toBigNumber(input.maxSupply) }),
+    ...(input.maxCapacity !== undefined && { maxCapacity: toBigNumber(input.maxCapacity) }),
+    ...(input.authorities && input.authorities.length > 0 && {
+      authorities: input.authorities.map(a => a as UserRef)
+    }),
+  }
+
+  logRequest('CreateNftCollection', dto)
+
+  return executeSignedApiCall(
+    () => (tokenApi as unknown as { CreateNftCollection: (dto: unknown) => Promise<{ Data: TokenClass }> }).CreateNftCollection(dto),
+    'CreateNftCollection'
+  )
+}
+
+// ============================================================================
 // Environment Configuration Export
 // ============================================================================
 

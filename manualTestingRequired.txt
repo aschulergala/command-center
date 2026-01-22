@@ -486,6 +486,55 @@ Please verify token balances display correctly and that transfers work with the 
 
 ---
 
+## nft-collection-flow (Issue Fix - Iteration 32)
+
+### Test Requirements
+Please test the full NFT collection creation flow: claim a collection name, then create the collection from that claim.
+
+### Checklist
+- [ ] CreateCollectionModal shows 3-step flow indicator (Claim → Create → Confirm)
+- [ ] Step 1: "Claim Collection Name" title displays
+- [ ] Step 1: Two-step process info box explains the flow
+- [ ] Step 1: Collection name input validates (letters, numbers, hyphens, underscores only)
+- [ ] Step 1: "Claim Name" button triggers MetaMask signing
+- [ ] Step 1: After claiming, automatically advances to Step 2
+- [ ] Step 2: "Create NFT Collection" title displays
+- [ ] Step 2: Green badge shows claimed collection name
+- [ ] Step 2: Form shows Basic Information (Name, Symbol, Description, Image URL)
+- [ ] Step 2: Form shows Token Identifiers (Category, Type, Additional Key)
+- [ ] Step 2: Collection key preview updates as you type
+- [ ] Step 2: Advanced Options shows Max Supply and Rarity
+- [ ] Step 2: "Continue" button validates form
+- [ ] Step 3: "Confirm Collection" title displays
+- [ ] Step 3: Preview shows collection image/placeholder, name, symbol
+- [ ] Step 3: Summary shows Type (NFT Collection), Collection Name, Token Key, Max Supply
+- [ ] Step 3: Info notice explains what creating the collection does
+- [ ] Step 3: "Create Collection" button triggers MetaMask signing
+- [ ] Approving transaction creates collection and closes modal
+- [ ] New collection appears in My Collections after creation
+- [ ] NO FT creation option visible (NFT-only)
+- [ ] NO token type toggle (NFT Collection / Fungible Token buttons)
+
+### How to Test
+1. Start the dev server: `npm run dev`
+2. Connect your wallet using the Connect Wallet button
+3. Navigate to the Creators page
+4. Click "Create New" button in the Create Collection card
+5. **Step 1 - Claim**: Enter a unique collection name (e.g., "my-test-collection")
+6. Click "Claim Name" and approve the MetaMask transaction
+7. **Step 2 - Create**: Fill in collection details:
+   - Name: "My Test Collection"
+   - Symbol: "MTC"
+   - Image URL: any valid HTTPS image URL
+   - Category: "Item"
+   - Type: "rare"
+8. Click "Continue" to go to confirmation
+9. **Step 3 - Confirm**: Review the collection details
+10. Click "Create Collection" and approve the MetaMask transaction
+11. Verify the collection appears in My Collections
+
+---
+
 ## responsive-design (Iteration 26)
 
 ### Test Requirements

@@ -118,8 +118,8 @@
         "Remove or update any CreateTokenClass usage for NFTs",
         "Update validation schemas for new DTOs"
       ],
-      "passes": false,
-      "notes": "This is a significant architectural change. The new flow requires users to first claim/authorize a collection name, then create the collection.",
+      "passes": true,
+      "notes": "Implemented new 3-step NFT collection flow: claim name -> fill details -> confirm. Added grantNftCollectionAuthorization, createNftCollection, and fetchNftCollectionAuthorizations to galachainClient.ts. Created useNftCollectionAuth.ts composable. Updated CreateCollectionModal.vue with the new flow. Updated creatorCollections store to track claimed vs created collections. FT creation option removed as part of this change.",
       "testing": {
         "automated": [
           "Unit test: grantNftCollectionAuthorization DTO structure",
@@ -151,8 +151,8 @@
         "Update any documentation or tooltips mentioning FT creation",
         "Consider adding a link to Launchpad for FT creation convenience"
       ],
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "FT creation option completely removed from CreateCollectionModal.vue as part of nft-collection-flow implementation. Modal now only supports NFT collection creation through the new 3-step flow.",
       "testing": {
         "automated": [
           "Component test: No FT creation option visible in Creators",

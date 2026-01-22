@@ -1,13 +1,9 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useForm, useField } from 'vee-validate'
-import {
-  getCreateCollectionTypedSchema,
-  defaultCollectionFormValues,
-  formatMaxSupply,
-  type CreateCollectionFormValues,
-} from '@/lib/schemas/createCollectionSchema'
-import { useCreateCollection } from '@/composables/useCreateCollection'
+import { toTypedSchema } from '@vee-validate/zod'
+import { z } from 'zod'
+import { useNftCollectionAuth } from '@/composables/useNftCollectionAuth'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 
 interface Props {
@@ -23,32 +19,92 @@ const emit = defineEmits<{
 
 // Composables
 const {
-  executeCreate,
+  isClaiming,
   isCreating,
-  error: createError,
+  error: authError,
   clearError,
-  getCollectionKey,
-} = useCreateCollection()
+  claimCollectionName,
+  createCollection,
+  pendingCollections,
+  fetchAuthorizations,
+} = useNftCollectionAuth()
 
 // Dialog ref
 const dialogRef = ref<HTMLDialogElement | null>(null)
 
-// Local state
-const showConfirmation = ref(false)
+// Flow state: 'claim' -> 'create' -> 'confirm'
+const flowStep = ref<'claim' | 'create' | 'confirm'>('claim')
+const claimedCollectionName = ref<string>('')
 const localError = ref<string | null>(null)
 const showAdvanced = ref(false)
 
-// Validation schema
-const validationSchema = computed(() => getCreateCollectionTypedSchema())
+// ============================================================================
+// Step 1: Claim Collection Name
+// ============================================================================
 
-// Form setup with VeeValidate
-const { handleSubmit, resetForm, meta, values } = useForm<CreateCollectionFormValues>({
-  validationSchema,
-  initialValues: defaultCollectionFormValues,
+const claimSchema = toTypedSchema(
+  z.object({
+    collectionName: z
+      .string()
+      .min(1, 'Collection name is required')
+      .max(50, 'Collection name must be 50 characters or less')
+      .regex(/^[a-zA-Z0-9-_]+$/, 'Only letters, numbers, hyphens and underscores allowed'),
+  })
+)
+
+const {
+  handleSubmit: handleClaimSubmit,
+  resetForm: resetClaimForm,
+  meta: claimMeta,
+} = useForm({
+  validationSchema: claimSchema,
+  initialValues: { collectionName: '' },
 })
 
-// Fields
-const { value: collection, errorMessage: collectionError } = useField<string>('collection')
+const { value: collectionName, errorMessage: collectionNameError } = useField<string>('collectionName')
+
+const canClaim = computed(() => claimMeta.value.valid && !isClaiming.value)
+
+// ============================================================================
+// Step 2: Create Collection Details
+// ============================================================================
+
+const createSchema = toTypedSchema(
+  z.object({
+    category: z.string().min(1, 'Category is required').regex(/^[a-zA-Z0-9-_]+$/, 'Invalid format'),
+    type: z.string().min(1, 'Type is required').regex(/^[a-zA-Z0-9-_]+$/, 'Invalid format'),
+    additionalKey: z.string().regex(/^[a-zA-Z0-9-_]*$/, 'Invalid format').optional(),
+    name: z.string().min(1, 'Name is required').max(100, 'Name must be 100 characters or less'),
+    symbol: z.string().min(1, 'Symbol is required').max(10, 'Symbol must be 10 characters or less'),
+    description: z.string().max(500, 'Description must be 500 characters or less').optional(),
+    image: z.string().url('Must be a valid URL').min(1, 'Image URL is required'),
+    maxSupply: z.string().optional().refine(
+      (val) => !val || /^\d+$/.test(val),
+      'Must be a positive whole number'
+    ),
+    rarity: z.string().optional(),
+  })
+)
+
+const {
+  handleSubmit: handleCreateSubmit,
+  resetForm: resetCreateForm,
+  meta: createMeta,
+} = useForm({
+  validationSchema: createSchema,
+  initialValues: {
+    category: 'Item',
+    type: '',
+    additionalKey: 'none',
+    name: '',
+    symbol: '',
+    description: '',
+    image: '',
+    maxSupply: '',
+    rarity: '',
+  },
+})
+
 const { value: category, errorMessage: categoryError } = useField<string>('category')
 const { value: type, errorMessage: typeError } = useField<string>('type')
 const { value: additionalKey, errorMessage: additionalKeyError } = useField<string>('additionalKey')
@@ -56,24 +112,38 @@ const { value: name, errorMessage: nameError } = useField<string>('name')
 const { value: symbol, errorMessage: symbolError } = useField<string>('symbol')
 const { value: description, errorMessage: descriptionError } = useField<string>('description')
 const { value: image, errorMessage: imageError } = useField<string>('image')
-const { value: isNonFungible } = useField<boolean>('isNonFungible')
-const { value: decimals, errorMessage: decimalsError } = useField<number>('decimals')
 const { value: maxSupply, errorMessage: maxSupplyError } = useField<string>('maxSupply')
+const { value: rarity, errorMessage: rarityError } = useField<string>('rarity')
 
-// Computed: form can submit
-const canSubmit = computed(() => {
-  return meta.value.valid && !isCreating.value
-})
+const canCreate = computed(() => createMeta.value.valid && !isCreating.value)
 
-// Computed: combined error
-const displayError = computed(() => localError.value || createError.value)
+// ============================================================================
+// Computed
+// ============================================================================
 
-// Computed: preview of collection key
+const isLoading = computed(() => isClaiming.value || isCreating.value)
+const displayError = computed(() => localError.value || authError.value)
+
+// Collection key preview
 const collectionKeyPreview = computed(() => {
-  return getCollectionKey(values)
+  if (!claimedCollectionName.value) return ''
+  const cat = category.value || 'category'
+  const t = type.value || 'type'
+  const ak = additionalKey.value || 'none'
+  return `${claimedCollectionName.value}|${cat}|${t}|${ak}`
 })
 
-// Watch for open state changes
+// Format max supply for display
+function formatMaxSupply(value: string): string {
+  if (!value) return 'Unlimited'
+  const num = parseInt(value, 10)
+  return isNaN(num) ? 'Unlimited' : num.toLocaleString()
+}
+
+// ============================================================================
+// Dialog management
+// ============================================================================
+
 watch(() => props.open, (isOpen) => {
   if (isOpen) {
     showDialog()
@@ -85,7 +155,7 @@ watch(() => props.open, (isOpen) => {
 function showDialog() {
   if (dialogRef.value) {
     dialogRef.value.showModal()
-    resetFormState()
+    resetAllState()
   }
 }
 
@@ -95,10 +165,16 @@ function hideDialog() {
   }
 }
 
-function resetFormState() {
-  resetForm()
-  // Re-apply defaults
-  collection.value = ''
+function resetAllState() {
+  flowStep.value = 'claim'
+  claimedCollectionName.value = ''
+  localError.value = null
+  showAdvanced.value = false
+  clearError()
+  resetClaimForm()
+  resetCreateForm()
+  // Re-set default values
+  collectionName.value = ''
   category.value = 'Item'
   type.value = ''
   additionalKey.value = 'none'
@@ -106,21 +182,15 @@ function resetFormState() {
   symbol.value = ''
   description.value = ''
   image.value = ''
-  isNonFungible.value = true
-  decimals.value = 0
   maxSupply.value = ''
-  showConfirmation.value = false
-  showAdvanced.value = false
-  localError.value = null
-  clearError()
+  rarity.value = ''
 }
 
 function handleClose() {
-  resetFormState()
+  resetAllState()
   emit('close')
 }
 
-// Handle clicks on dialog backdrop
 function handleDialogClick(event: MouseEvent) {
   const target = event.target as HTMLElement
   if (target === dialogRef.value) {
@@ -128,43 +198,63 @@ function handleDialogClick(event: MouseEvent) {
   }
 }
 
-// Handle ESC key
 function handleKeyDown(event: KeyboardEvent) {
   if (event.key === 'Escape') {
     handleClose()
   }
 }
 
-// Go to confirmation step
-const goToConfirmation = handleSubmit(() => {
-  showConfirmation.value = true
+// ============================================================================
+// Flow navigation
+// ============================================================================
+
+// Step 1: Claim collection name
+const submitClaim = handleClaimSubmit(async () => {
+  localError.value = null
+
+  const result = await claimCollectionName(collectionName.value)
+
+  if (result.success) {
+    claimedCollectionName.value = collectionName.value
+    flowStep.value = 'create'
+  } else {
+    localError.value = result.error || 'Failed to claim collection name'
+  }
+})
+
+// Step 2: Fill in collection details -> go to confirmation
+const goToConfirmation = handleCreateSubmit(() => {
+  flowStep.value = 'confirm'
   localError.value = null
 })
 
-// Go back to form
-function goBackToForm() {
-  showConfirmation.value = false
+// Go back from confirmation to create
+function goBackToCreate() {
+  flowStep.value = 'create'
 }
 
-// Execute the collection creation
+// Go back from create to claim (start over)
+function goBackToClaim() {
+  flowStep.value = 'claim'
+  claimedCollectionName.value = ''
+}
+
+// Step 3: Confirm and create
 async function confirmCreate() {
   localError.value = null
 
-  const formValues: CreateCollectionFormValues = {
-    collection: collection.value,
+  const result = await createCollection({
+    collection: claimedCollectionName.value,
     category: category.value,
     type: type.value,
     additionalKey: additionalKey.value || 'none',
     name: name.value,
     symbol: symbol.value,
-    description: description.value,
+    description: description.value || '',
     image: image.value,
-    isNonFungible: isNonFungible.value,
-    decimals: decimals.value,
-    maxSupply: maxSupply.value,
-  }
-
-  const result = await executeCreate(formValues)
+    ...(maxSupply.value && { maxSupply: maxSupply.value }),
+    ...(rarity.value && { rarity: rarity.value }),
+  })
 
   if (result.success) {
     emit('success')
@@ -174,11 +264,23 @@ async function confirmCreate() {
   }
 }
 
+// Use an existing claimed collection
+function useClaimedCollection(name: string) {
+  claimedCollectionName.value = name
+  flowStep.value = 'create'
+}
+
+// ============================================================================
+// Lifecycle
+// ============================================================================
+
 onMounted(() => {
   if (props.open) {
     showDialog()
   }
   window.addEventListener('keydown', handleKeyDown)
+  // Fetch existing authorizations
+  fetchAuthorizations()
 })
 
 onUnmounted(() => {
@@ -195,13 +297,38 @@ onUnmounted(() => {
     <div class="flex flex-col h-full sm:max-h-[90vh]">
       <!-- Header -->
       <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
-          {{ showConfirmation ? 'Confirm Collection' : 'Create Collection' }}
-        </h2>
+        <div>
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+            {{ flowStep === 'claim' ? 'Claim Collection Name' :
+               flowStep === 'create' ? 'Create NFT Collection' :
+               'Confirm Collection' }}
+          </h2>
+          <!-- Step indicator -->
+          <div class="flex items-center gap-2 mt-1">
+            <div
+              class="w-2 h-2 rounded-full"
+              :class="flowStep === 'claim' ? 'bg-gala-primary' : 'bg-green-500'"
+            />
+            <span class="text-xs text-gray-500">Step 1: Claim</span>
+            <div class="w-4 h-px bg-gray-300 dark:bg-gray-600" />
+            <div
+              class="w-2 h-2 rounded-full"
+              :class="flowStep === 'claim' ? 'bg-gray-300 dark:bg-gray-600' :
+                      flowStep === 'create' ? 'bg-gala-primary' : 'bg-green-500'"
+            />
+            <span class="text-xs text-gray-500">Step 2: Create</span>
+            <div class="w-4 h-px bg-gray-300 dark:bg-gray-600" />
+            <div
+              class="w-2 h-2 rounded-full"
+              :class="flowStep === 'confirm' ? 'bg-gala-primary' : 'bg-gray-300 dark:bg-gray-600'"
+            />
+            <span class="text-xs text-gray-500">Step 3: Confirm</span>
+          </div>
+        </div>
         <button
           type="button"
           class="p-2 -mr-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-          :disabled="isCreating"
+          :disabled="isLoading"
           @click="handleClose"
         >
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -225,8 +352,79 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <!-- Form View -->
-        <div v-if="!showConfirmation">
+        <!-- ===== STEP 1: CLAIM COLLECTION NAME ===== -->
+        <div v-if="flowStep === 'claim'">
+          <!-- Info about the two-step process -->
+          <div class="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+            <div class="flex items-start gap-2">
+              <svg class="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div class="text-sm text-blue-700 dark:text-blue-300">
+                <p class="font-medium">Two-Step Collection Creation</p>
+                <p class="mt-1">First, claim a unique collection name to reserve it. Then, fill in the collection details and create it.</p>
+              </div>
+            </div>
+          </div>
+
+          <form @submit.prevent="submitClaim" class="space-y-4">
+            <!-- Collection Name -->
+            <div>
+              <label for="collectionName" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Collection Name *
+              </label>
+              <input
+                id="collectionName"
+                v-model="collectionName"
+                type="text"
+                placeholder="my-awesome-collection"
+                class="input w-full"
+                :class="{ 'border-red-500 dark:border-red-500': collectionNameError }"
+                :disabled="isClaiming"
+              />
+              <p v-if="collectionNameError" class="mt-1 text-sm text-red-600 dark:text-red-400">
+                {{ collectionNameError }}
+              </p>
+              <p v-else class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                Letters, numbers, hyphens and underscores only. This will be your unique collection identifier.
+              </p>
+            </div>
+          </form>
+
+          <!-- Existing claimed collections -->
+          <div v-if="pendingCollections.length > 0" class="mt-6">
+            <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Or use a previously claimed name:
+            </h3>
+            <div class="space-y-2">
+              <button
+                v-for="claimed in pendingCollections"
+                :key="claimed.collection"
+                type="button"
+                class="w-full p-3 text-left border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                @click="useClaimedCollection(claimed.collection)"
+              >
+                <span class="font-medium text-gray-900 dark:text-white">{{ claimed.collection }}</span>
+                <span class="text-xs text-green-600 dark:text-green-400 ml-2">Claimed</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== STEP 2: CREATE COLLECTION DETAILS ===== -->
+        <div v-if="flowStep === 'create'">
+          <!-- Claimed collection badge -->
+          <div class="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+            <div class="flex items-center gap-2">
+              <svg class="w-5 h-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <span class="text-sm text-green-700 dark:text-green-300">
+                Collection name claimed: <strong>{{ claimedCollectionName }}</strong>
+              </span>
+            </div>
+          </div>
+
           <form @submit.prevent="goToConfirmation" class="space-y-6">
             <!-- Basic Info Section -->
             <div>
@@ -237,7 +435,7 @@ onUnmounted(() => {
               <!-- Name -->
               <div class="mb-4">
                 <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Name *
+                  Display Name *
                 </label>
                 <input
                   id="name"
@@ -285,7 +483,7 @@ onUnmounted(() => {
                   id="description"
                   v-model="description"
                   rows="3"
-                  placeholder="Describe your collection..."
+                  placeholder="Describe your NFT collection..."
                   class="input w-full resize-none"
                   :class="{ 'border-red-500 dark:border-red-500': descriptionError }"
                   :disabled="isCreating"
@@ -318,48 +516,6 @@ onUnmounted(() => {
               </div>
             </div>
 
-            <!-- Token Type Section -->
-            <div>
-              <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                Token Type
-              </h3>
-
-              <div class="flex gap-3">
-                <button
-                  type="button"
-                  class="flex-1 p-3 border-2 rounded-lg transition-colors"
-                  :class="isNonFungible
-                    ? 'border-gala-primary bg-gala-primary/10 text-gala-primary'
-                    : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600'"
-                  @click="isNonFungible = true"
-                >
-                  <div class="flex flex-col items-center gap-1">
-                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    <span class="text-sm font-medium">NFT Collection</span>
-                    <span class="text-xs opacity-75">Unique items</span>
-                  </div>
-                </button>
-                <button
-                  type="button"
-                  class="flex-1 p-3 border-2 rounded-lg transition-colors"
-                  :class="!isNonFungible
-                    ? 'border-gala-primary bg-gala-primary/10 text-gala-primary'
-                    : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600'"
-                  @click="isNonFungible = false"
-                >
-                  <div class="flex flex-col items-center gap-1">
-                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span class="text-sm font-medium">Fungible Token</span>
-                    <span class="text-xs opacity-75">Divisible units</span>
-                  </div>
-                </button>
-              </div>
-            </div>
-
             <!-- Token Key Section -->
             <div>
               <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
@@ -367,25 +523,6 @@ onUnmounted(() => {
               </h3>
 
               <div class="grid grid-cols-2 gap-4">
-                <!-- Collection -->
-                <div>
-                  <label for="collection" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Collection *
-                  </label>
-                  <input
-                    id="collection"
-                    v-model="collection"
-                    type="text"
-                    placeholder="my-collection"
-                    class="input w-full"
-                    :class="{ 'border-red-500 dark:border-red-500': collectionError }"
-                    :disabled="isCreating"
-                  />
-                  <p v-if="collectionError" class="mt-1 text-sm text-red-600 dark:text-red-400">
-                    {{ collectionError }}
-                  </p>
-                </div>
-
                 <!-- Category -->
                 <div>
                   <label for="category" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -425,7 +562,7 @@ onUnmounted(() => {
                 </div>
 
                 <!-- Additional Key -->
-                <div>
+                <div class="col-span-2">
                   <label for="additionalKey" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Additional Key
                   </label>
@@ -489,30 +626,26 @@ onUnmounted(() => {
                     {{ maxSupplyError }}
                   </p>
                   <p v-else class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    Maximum number of tokens that can exist
+                    Maximum number of NFTs that can be minted
                   </p>
                 </div>
 
-                <!-- Decimals (only for fungible) -->
-                <div v-if="!isNonFungible">
-                  <label for="decimals" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Decimals
+                <!-- Rarity -->
+                <div>
+                  <label for="rarity" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Rarity
                   </label>
                   <input
-                    id="decimals"
-                    v-model.number="decimals"
-                    type="number"
-                    min="0"
-                    max="18"
+                    id="rarity"
+                    v-model="rarity"
+                    type="text"
+                    placeholder="e.g., Legendary, Epic, Rare"
                     class="input w-full"
-                    :class="{ 'border-red-500 dark:border-red-500': decimalsError }"
+                    :class="{ 'border-red-500 dark:border-red-500': rarityError }"
                     :disabled="isCreating"
                   />
-                  <p v-if="decimalsError" class="mt-1 text-sm text-red-600 dark:text-red-400">
-                    {{ decimalsError }}
-                  </p>
-                  <p v-else class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    Number of decimal places (0-18)
+                  <p v-if="rarityError" class="mt-1 text-sm text-red-600 dark:text-red-400">
+                    {{ rarityError }}
                   </p>
                 </div>
               </div>
@@ -520,8 +653,8 @@ onUnmounted(() => {
           </form>
         </div>
 
-        <!-- Confirmation View -->
-        <div v-else>
+        <!-- ===== STEP 3: CONFIRMATION ===== -->
+        <div v-if="flowStep === 'confirm'">
           <div class="space-y-4">
             <!-- Collection Preview -->
             <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg space-y-3">
@@ -546,9 +679,11 @@ onUnmounted(() => {
 
               <div class="flex justify-between">
                 <span class="text-sm text-gray-500 dark:text-gray-400">Type</span>
-                <span class="text-sm font-medium text-gray-900 dark:text-white">
-                  {{ isNonFungible ? 'NFT Collection' : 'Fungible Token' }}
-                </span>
+                <span class="text-sm font-medium text-gray-900 dark:text-white">NFT Collection</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-sm text-gray-500 dark:text-gray-400">Collection Name</span>
+                <span class="text-sm font-medium text-gray-900 dark:text-white">{{ claimedCollectionName }}</span>
               </div>
               <div class="flex justify-between">
                 <span class="text-sm text-gray-500 dark:text-gray-400">Token Key</span>
@@ -562,9 +697,9 @@ onUnmounted(() => {
                   {{ formatMaxSupply(maxSupply) }}
                 </span>
               </div>
-              <div v-if="!isNonFungible" class="flex justify-between">
-                <span class="text-sm text-gray-500 dark:text-gray-400">Decimals</span>
-                <span class="text-sm font-medium text-gray-900 dark:text-white">{{ decimals }}</span>
+              <div v-if="rarity" class="flex justify-between">
+                <span class="text-sm text-gray-500 dark:text-gray-400">Rarity</span>
+                <span class="text-sm font-medium text-gray-900 dark:text-white">{{ rarity }}</span>
               </div>
               <div v-if="description" class="pt-2 border-t border-gray-200 dark:border-gray-700">
                 <span class="text-sm text-gray-500 dark:text-gray-400 block mb-1">Description</span>
@@ -579,11 +714,11 @@ onUnmounted(() => {
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <div class="text-sm text-blue-700 dark:text-blue-300">
-                  <p class="font-medium">Creating this collection will:</p>
+                  <p class="font-medium">Creating this NFT collection will:</p>
                   <ul class="list-disc list-inside mt-1 space-y-1">
-                    <li>Register the token class on GalaChain</li>
+                    <li>Register the NFT collection on GalaChain</li>
                     <li>Make you the collection authority</li>
-                    <li>Allow you to mint tokens from this collection</li>
+                    <li>Allow you to mint NFTs from this collection</li>
                   </ul>
                   <p class="mt-2">This action requires signing with your wallet.</p>
                 </div>
@@ -595,30 +730,54 @@ onUnmounted(() => {
 
       <!-- Footer -->
       <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex gap-3">
-        <template v-if="!showConfirmation">
+        <!-- Step 1: Claim -->
+        <template v-if="flowStep === 'claim'">
           <button
             type="button"
             class="flex-1 btn-secondary"
-            :disabled="isCreating"
+            :disabled="isClaiming"
             @click="handleClose"
           >
             Cancel
           </button>
           <button
             type="button"
+            class="flex-1 btn-primary flex items-center justify-center gap-2"
+            :disabled="!canClaim"
+            @click="submitClaim"
+          >
+            <LoadingSpinner v-if="isClaiming" size="sm" />
+            <span>{{ isClaiming ? 'Claiming...' : 'Claim Name' }}</span>
+          </button>
+        </template>
+
+        <!-- Step 2: Create -->
+        <template v-else-if="flowStep === 'create'">
+          <button
+            type="button"
+            class="flex-1 btn-secondary"
+            :disabled="isCreating"
+            @click="goBackToClaim"
+          >
+            Back
+          </button>
+          <button
+            type="button"
             class="flex-1 btn-primary"
-            :disabled="!canSubmit"
+            :disabled="!canCreate"
             @click="goToConfirmation"
           >
             Continue
           </button>
         </template>
+
+        <!-- Step 3: Confirm -->
         <template v-else>
           <button
             type="button"
             class="flex-1 btn-secondary"
             :disabled="isCreating"
-            @click="goBackToForm"
+            @click="goBackToCreate"
           >
             Back
           </button>

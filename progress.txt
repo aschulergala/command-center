@@ -1460,3 +1460,54 @@
   - The previous code incorrectly assumed values were in smallest units (like Wei for ETH)
   - This pattern differs from Ethereum where values are in Wei and need division by 10^18
 ---
+
+## Iteration 32 - nft-collection-flow (Issue Fix)
+- What was implemented:
+  - Implemented new 3-step NFT collection creation flow: Claim -> Create -> Confirm
+  - Added new GalaChain API endpoints to galachainClient.ts:
+    - grantNftCollectionAuthorization() - Claims a collection name (Step 1)
+    - createNftCollection() - Creates collection from claimed name (Step 2)
+    - fetchNftCollectionAuthorizations() - Fetches user's claimed collections (unsigned read)
+  - Created client/src/composables/useNftCollectionAuth.ts with:
+    - claimCollectionName() - Grants authorization to create a collection
+    - createCollection() - Creates NFT collection from claimed authorization
+    - fetchAuthorizations() - Fetches all claimed collections
+    - useCollectionCreationFlow() - Helper for managing the claim-then-create flow
+    - Reactive state: isLoading, isClaiming, isCreating, error, claimedCollections
+  - Completely rewrote client/src/components/creators/CreateCollectionModal.vue:
+    - Step 1: Claim collection name with info about two-step process
+    - Step 2: Fill in collection details (name, symbol, description, image, category, type, additionalKey)
+    - Step 3: Confirmation with preview and create button
+    - Step indicator showing progress through all 3 steps
+    - Shows previously claimed collections that can be used
+    - REMOVED FT creation option (modal is now NFT-only)
+    - Uses new useNftCollectionAuth composable
+  - Updated client/src/stores/creatorCollections.ts:
+    - Added claimedCollections state
+    - Added CollectionStatus type ('claimed' | 'created')
+    - Added setClaimedCollections(), addClaimedCollection(), markCollectionCreated() actions
+    - Added hasClaimedCollections and pendingClaimedCollections getters
+  - Updated tests in client/__tests__/components/creators/CreateCollectionModal.spec.ts:
+    - Rewrote all tests to match new 3-step flow
+    - Tests for Step 1 claim form
+    - Tests for NFT-only mode (no FT toggle)
+    - Tests for modal behavior and form validation
+- Files changed:
+  - client/src/lib/galachainClient.ts (added NFT collection endpoints)
+  - client/src/composables/useNftCollectionAuth.ts (new)
+  - client/src/components/creators/CreateCollectionModal.vue (completely rewritten)
+  - client/src/stores/creatorCollections.ts (added claimed collections tracking)
+  - client/__tests__/components/creators/CreateCollectionModal.spec.ts (rewritten)
+  - ISSUES_FIX_PLAN.json (marked nft-collection-flow as passed)
+  - ISSUES_FIX_PLAN.json (marked hide-ft-creation as passed)
+  - manualTestingRequired.txt (added nft-collection-flow testing checklist)
+- GalaChain tools used: /galachain:ask for NFT collection creation flow research
+- Tests: All 1201 tests pass (1143 client + 58 server)
+- Learnings for future iterations:
+  - NFT collection creation uses a 2-transaction flow: GrantNftCollectionAuthorization then CreateNftCollection
+  - FetchNftCollectionAuthorizationsWithPagination is an unsigned read operation
+  - The collection name in CreateNftCollectionDto must match an existing authorization
+  - TokenApi doesn't have built-in methods for these endpoints - use type casting with unknown
+  - VeeValidate error messages only show after interaction - test with setValue() not just initial render
+  - The new flow explicitly separates claiming a name from creating the collection
+---
