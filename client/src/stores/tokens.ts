@@ -79,7 +79,7 @@ function toFungibleTokenDisplay(
   const inUseBalance = calculateLockedBalance(b.inUseHolds)
   const spendableBalance = totalBalance.minus(lockedBalance).minus(inUseBalance)
 
-  // Check for mint/burn allowances for this token
+  // Check for mint allowances for this token
   const hasMintAllowance = mintAllowances.some(
     a => a.collection === b.collection &&
          a.category === b.category &&
@@ -87,12 +87,17 @@ function toFungibleTokenDisplay(
          a.additionalKey === b.additionalKey
   )
 
+  // Users can burn tokens if:
+  // 1. They own tokens (have a positive balance), OR
+  // 2. They have burn authority (burn allowance)
   const hasBurnAllowance = burnAllowances.some(
     a => a.collection === b.collection &&
          a.category === b.category &&
          a.type === b.type &&
          a.additionalKey === b.additionalKey
   )
+  const hasBalance = totalBalance.isGreaterThan(0)
+  const canBurnToken = hasBalance || hasBurnAllowance
 
   // Get mint allowance amount if exists
   const mintAllowance = mintAllowances.find(
@@ -133,7 +138,7 @@ function toFungibleTokenDisplay(
     spendableBalanceRaw: spendableBalance.toString(),
     spendableBalanceFormatted: formatBalance(spendableBalance, decimals),
     canMint: hasMintAllowance,
-    canBurn: hasBurnAllowance,
+    canBurn: canBurnToken,
     mintAllowanceRaw: mintAllowanceRemaining?.toString(),
     mintAllowanceFormatted: mintAllowanceRemaining ? formatBalance(mintAllowanceRemaining, decimals) : undefined,
   }

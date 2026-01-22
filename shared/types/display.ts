@@ -47,7 +47,7 @@ export interface FungibleTokenDisplay {
   spendableBalanceFormatted: string;
   /** Whether user has mint authority for this token */
   canMint: boolean;
-  /** Whether user has burn authority for this token */
+  /** Whether user can burn this token (owns tokens OR has burn authority) */
   canBurn: boolean;
   /** Remaining mint allowance if canMint is true (raw string) */
   mintAllowanceRaw?: string;
