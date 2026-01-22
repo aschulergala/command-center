@@ -138,19 +138,19 @@ describe('mintSchema', () => {
   })
 
   describe('formatMintAmount', () => {
+    // Note: GalaChain quantity values are already actual token amounts - no decimal conversion needed
     it('should format large amounts with commas', () => {
-      // 100000000000 / 10^8 = 1000
-      expect(formatMintAmount('100000000000', 8)).toBe('1,000.00')
+      expect(formatMintAmount('1000', 8)).toBe('1,000.00')
+      expect(formatMintAmount('1000000', 8)).toBe('1,000,000.00')
     })
 
     it('should format small amounts with precision', () => {
-      // 1000000 / 10^8 = 0.01
-      expect(formatMintAmount('1000000', 8)).toBe('0.0100')
+      expect(formatMintAmount('0.01', 8)).toBe('0.0100')
+      expect(formatMintAmount('0.5', 8)).toBe('0.5000')
     })
 
     it('should format very small amounts in scientific notation', () => {
-      // 1 / 10^8 = 0.00000001
-      const result = formatMintAmount('1', 8)
+      const result = formatMintAmount('0.00001', 8)
       expect(result).toMatch(/e/)
     })
 
@@ -166,15 +166,16 @@ describe('mintSchema', () => {
       expect(formatMintAmount('0', 8)).toBe('0')
     })
 
-    it('should use default decimals of 8', () => {
-      const resultDefault = formatMintAmount('100000000')
-      const resultExplicit = formatMintAmount('100000000', 8)
+    it('should use default decimals parameter (no longer affects output)', () => {
+      const resultDefault = formatMintAmount('100')
+      const resultExplicit = formatMintAmount('100', 8)
       expect(resultDefault).toBe(resultExplicit)
     })
 
-    it('should handle different decimal places', () => {
-      // 1000000 / 10^6 = 1
-      expect(formatMintAmount('1000000', 6)).toBe('1.0000')
+    it('should format amounts consistently regardless of decimals parameter', () => {
+      // Since we no longer divide by decimals, the output should be the same
+      expect(formatMintAmount('1000', 6)).toBe('1,000.00')
+      expect(formatMintAmount('1', 8)).toBe('1.0000')
     })
   })
 })

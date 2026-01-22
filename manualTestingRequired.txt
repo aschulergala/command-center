@@ -460,6 +460,32 @@ Please test error scenarios: reject a transaction, disconnect network, and verif
 
 ---
 
+## transfer-balance-decimals (Issue Fix - Iteration 31)
+
+### Test Requirements
+Please verify token balances display correctly and that transfers work with the correct amounts.
+
+### Checklist
+- [ ] Verify displayed balance matches actual token balance (no 10^8 division)
+- [ ] Verify balance in TransferModal matches balance in TokenCard
+- [ ] Verify MAX button in TransferModal fills in the correct amount
+- [ ] Verify balance in MintModal displays correctly
+- [ ] Verify balance in BurnModal displays correctly
+- [ ] Complete a transfer and verify amount transferred matches input
+- [ ] Verify mint allowance displays correctly (not divided incorrectly)
+- [ ] Verify burn amount validation works with correct balance
+
+### How to Test
+1. Start the dev server: `npm run dev`
+2. Connect your wallet using the Connect Wallet button
+3. Navigate to the Tokens page
+4. Compare displayed balances with your known token balances
+5. Open TransferModal and verify balance matches
+6. Click MAX and verify it fills the correct amount
+7. Complete a small transfer and verify the amount is correct
+
+---
+
 ## responsive-design (Iteration 26)
 
 ### Test Requirements

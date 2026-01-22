@@ -157,6 +157,7 @@ describe('burnSchema', () => {
   })
 
   describe('formatBurnAmount', () => {
+    // Note: GalaChain quantity values are already actual token amounts - no decimal conversion needed
     it('returns "0" for empty string', () => {
       expect(formatBurnAmount('')).toBe('0')
     })
@@ -170,23 +171,24 @@ describe('burnSchema', () => {
     })
 
     it('formats large numbers with thousands separators', () => {
-      // 1000 * 10^8 = 100000000000
-      expect(formatBurnAmount('100000000000', 8)).toBe('1,000.00')
+      expect(formatBurnAmount('1000', 8)).toBe('1,000.00')
+      expect(formatBurnAmount('1000000', 8)).toBe('1,000,000.00')
     })
 
     it('formats smaller numbers with precision', () => {
-      // 0.5 * 10^8 = 50000000
-      expect(formatBurnAmount('50000000', 8)).toBe('0.5000')
+      expect(formatBurnAmount('0.5', 8)).toBe('0.5000')
+      expect(formatBurnAmount('0.01', 8)).toBe('0.0100')
     })
 
     it('uses exponential notation for very small numbers', () => {
-      // 0.00001 * 10^8 = 1000
-      expect(formatBurnAmount('1', 8)).toBe('1.00e-8')
+      const result = formatBurnAmount('0.00001', 8)
+      expect(result).toMatch(/e/)
     })
 
-    it('respects decimal parameter', () => {
-      // 10 with 2 decimals = 0.1
-      expect(formatBurnAmount('10', 2)).toBe('0.1000')
+    it('formats amounts consistently regardless of decimals parameter', () => {
+      // Since we no longer divide by decimals, the output should be the same
+      expect(formatBurnAmount('10', 2)).toBe('10.0000')
+      expect(formatBurnAmount('10', 8)).toBe('10.0000')
     })
 
     it('handles whitespace', () => {

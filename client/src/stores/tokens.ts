@@ -22,25 +22,23 @@ function calculateLockedBalance(holds: Array<{ quantity: BigNumber }> | undefine
 }
 
 /**
- * Format a balance with proper decimals
+ * Format a balance for display
+ * Note: GalaChain quantity values are already the actual token amounts - no decimal conversion needed
  */
-function formatBalance(balance: BigNumber, decimals: number = 8): string {
+function formatBalance(balance: BigNumber, _decimals: number = 8): string {
   if (balance.isZero()) return '0'
 
-  // Format with up to 4 decimal places for display
-  const formatted = balance.dividedBy(new BigNumber(10).pow(decimals))
-
   // Use toFormat for thousands separators
-  if (formatted.isGreaterThanOrEqualTo(1000)) {
-    return formatted.toFormat(2)
+  if (balance.isGreaterThanOrEqualTo(1000)) {
+    return balance.toFormat(2)
   }
 
   // For smaller numbers, show more precision
-  if (formatted.isLessThan(0.0001)) {
-    return formatted.toExponential(2)
+  if (balance.isLessThan(0.0001)) {
+    return balance.toExponential(2)
   }
 
-  return formatted.toFormat(4)
+  return balance.toFormat(4)
 }
 
 /**

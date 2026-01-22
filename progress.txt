@@ -1434,3 +1434,29 @@
   - When fetching data for display, you can call the API without wallet connection
   - Only prompt for wallet/signing when the user takes an action (transfer, mint, burn)
 ---
+
+## Iteration 31 - transfer-balance-decimals (Issue Fix)
+- What was implemented:
+  - Fixed incorrect decimal handling where balances were being divided by 10^8
+  - GalaChain quantity values are already the actual token amounts - no decimal conversion needed
+  - Removed the division by 10^decimals from all formatting functions
+- Files changed:
+  - client/src/stores/tokens.ts:
+    - Updated formatBalance() to NOT divide by 10^decimals
+    - Added comment explaining GalaChain quantities are actual amounts
+  - client/src/lib/schemas/mintSchema.ts:
+    - Updated formatMintAmount() to NOT divide by 10^decimals
+    - Renamed decimals param to _decimals (unused, kept for API compatibility)
+  - client/src/lib/schemas/burnSchema.ts:
+    - Updated formatBurnAmount() to NOT divide by 10^decimals
+    - Renamed decimals param to _decimals (unused, kept for API compatibility)
+  - client/__tests__/lib/schemas/mintSchema.spec.ts - updated tests for new behavior
+  - client/__tests__/lib/schemas/burnSchema.spec.ts - updated tests for new behavior
+- GalaChain tools used: None
+- Tests: All 1204 tests pass (1146 client + 58 server)
+- Learnings for future iterations:
+  - GalaChain quantity values from the API are the ACTUAL token amounts
+  - No decimal conversion/division is needed when displaying balances
+  - The previous code incorrectly assumed values were in smallest units (like Wei for ETH)
+  - This pattern differs from Ethereum where values are in Wei and need division by 10^18
+---

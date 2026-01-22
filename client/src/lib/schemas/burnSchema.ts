@@ -67,13 +67,14 @@ export function createBurnSchema(balance: string) {
 }
 
 /**
- * Format amount for display with proper decimals
+ * Format amount for display
+ * Note: GalaChain quantity values are already the actual token amounts - no decimal conversion needed
  *
  * @param amount - Raw amount string
- * @param decimals - Number of decimal places
+ * @param _decimals - Number of decimal places (unused, kept for API compatibility)
  * @returns Formatted amount string
  */
-export function formatBurnAmount(amount: string, decimals: number = 8): string {
+export function formatBurnAmount(amount: string, _decimals: number = 8): string {
   if (!amount || amount.trim() === '') return '0'
 
   const value = new BigNumber(amount)
@@ -82,20 +83,17 @@ export function formatBurnAmount(amount: string, decimals: number = 8): string {
   // Return '0' for zero values
   if (value.isZero()) return '0'
 
-  // Divide by 10^decimals to get the display value
-  const displayValue = value.dividedBy(new BigNumber(10).pow(decimals))
-
   // Format with thousands separators
-  if (displayValue.isGreaterThanOrEqualTo(1000)) {
-    return displayValue.toFormat(2)
+  if (value.isGreaterThanOrEqualTo(1000)) {
+    return value.toFormat(2)
   }
 
   // For smaller numbers, show more precision
-  if (displayValue.isLessThan(0.0001) && !displayValue.isZero()) {
-    return displayValue.toExponential(2)
+  if (value.isLessThan(0.0001) && !value.isZero()) {
+    return value.toExponential(2)
   }
 
-  return displayValue.toFormat(4)
+  return value.toFormat(4)
 }
 
 export type BurnFormData = z.infer<ReturnType<typeof createBurnSchema>>

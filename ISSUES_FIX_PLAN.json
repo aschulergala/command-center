@@ -1,0 +1,253 @@
+{
+  "module": "GalaChain Command Center - Issues Fix Plan",
+  "version": "1.0.0",
+  "description": "Fixes for issues discovered during testing of the GalaChain Command Center",
+  "created": "2026-01-22",
+  "sourceFile": "issues.txt",
+  "requirements": [
+    {
+      "category": "allowances-bidirectional",
+      "description": "Show allowances granted TO the user AND granted BY the user",
+      "priority": "medium",
+      "issue": "allowances should include those granted to the user and by the user (requirements fail, not possible to get the granted by without a granted to)",
+      "steps": [
+        "Research FetchAllowances API to understand query parameters",
+        "Update fetchAllowances in galachainClient.ts to support grantedBy parameter",
+        "Create two separate queries: one for allowances granted TO user, one for allowances granted BY user",
+        "Update useGalaChain.ts getAllowances to return both sets",
+        "Update tokens store to maintain separate allowancesGrantedTo and allowancesGrantedBy arrays",
+        "Update AllowanceList.vue to display both sections with clear labels",
+        "Add toggle or tabs to switch between 'Received' and 'Granted' allowances",
+        "Handle edge case where API doesn't support grantedBy query (show message if not possible)"
+      ],
+      "passes": false,
+      "notes": "May be limited by API - the issue notes 'not possible to get the granted by without a granted to'. Need to investigate API capabilities first.",
+      "testing": {
+        "automated": [
+          "Unit test: fetchAllowances with grantedBy parameter",
+          "Component test: AllowanceList shows both sections",
+          "Component test: toggle between received/granted works"
+        ],
+        "manual": [
+          "REQUIRED: Verify allowances granted TO user display correctly",
+          "REQUIRED: Verify allowances granted BY user display correctly (if API supports)"
+        ]
+      }
+    },
+    {
+      "category": "balances-with-metadata",
+      "description": "Use FetchBalancesWithMetadata endpoint to show quantity and token images",
+      "priority": "high",
+      "issue": "balances don't show the quantity or the token image, etc. Use FetchBalancesWithMetadata endpoint rather than FetchBalances endpoint.",
+      "steps": [
+        "Research FetchBalancesWithMetadata endpoint response structure",
+        "Update galachainClient.ts to add fetchBalancesWithMetadata function",
+        "Update unsignedPost to handle the new endpoint",
+        "Update shared/types/display.ts to include metadata fields (image, description, etc.)",
+        "Update useFungibleTokens.ts to use fetchBalancesWithMetadata",
+        "Update useNFTs.ts to use fetchBalancesWithMetadata",
+        "Update TokenCard.vue to display token image if available",
+        "Update NFTCard.vue to display NFT image from metadata",
+        "Add placeholder/fallback image for tokens without images",
+        "Ensure quantity displays correctly from the response"
+      ],
+      "passes": false,
+      "notes": "",
+      "testing": {
+        "automated": [
+          "Unit test: fetchBalancesWithMetadata returns expected structure",
+          "Component test: TokenCard displays image when available",
+          "Component test: TokenCard shows placeholder when no image",
+          "Component test: NFTCard displays metadata image"
+        ],
+        "manual": [
+          "REQUIRED: Verify token images display correctly",
+          "REQUIRED: Verify token quantities are accurate",
+          "REQUIRED: Verify NFT images load from metadata"
+        ]
+      }
+    },
+    {
+      "category": "token-identification",
+      "description": "Identify tokens by collection field (unless 'Token'), otherwise use type field",
+      "priority": "high",
+      "issue": "tokens should be identified by their collection field if it is not 'Token'. Otherwise use the type field",
+      "steps": [
+        "Create utility function getTokenIdentifier(token) in client/src/lib/tokenUtils.ts",
+        "Logic: if token.collection !== 'Token', return token.collection; else return token.type",
+        "Update TokenCard.vue to use getTokenIdentifier for display name",
+        "Update NFTCard.vue to use getTokenIdentifier for display",
+        "Update sorting logic to use the identifier",
+        "Update filtering logic to use the identifier",
+        "Update transfer modal to show correct token identifier",
+        "Update mint/burn modals to show correct token identifier",
+        "Add tests for the utility function with various token types"
+      ],
+      "passes": false,
+      "notes": "",
+      "testing": {
+        "automated": [
+          "Unit test: getTokenIdentifier returns collection when not 'Token'",
+          "Unit test: getTokenIdentifier returns type when collection is 'Token'",
+          "Component test: TokenCard displays correct identifier",
+          "Component test: NFTCard displays correct identifier"
+        ],
+        "manual": [
+          "REQUIRED: Verify tokens with custom collections show collection name",
+          "REQUIRED: Verify tokens with 'Token' collection show type name"
+        ]
+      }
+    },
+    {
+      "category": "nft-collection-flow",
+      "description": "Use new NFTCollection flow instead of CreateTokenClass for NFT creation",
+      "priority": "critical",
+      "issue": "Attempts to use the original CreateTokenClass flow rather than the new NFTCollection flow. Should use: GrantNftCollectionAuthorization, CreateNftCollection, FetchNftCollectionAuthorizationsWithPagination",
+      "steps": [
+        "Research the new NFT collection endpoints and their DTOs",
+        "Add grantNftCollectionAuthorization to galachainClient.ts",
+        "Add createNftCollection to galachainClient.ts",
+        "Add fetchNftCollectionAuthorizations to galachainClient.ts (unsigned read)",
+        "Create client/src/composables/useNftCollectionAuth.ts for claiming collection names",
+        "Update CreateCollectionModal.vue to use the two-step flow:",
+        "  Step 1: Claim collection name (GrantNftCollectionAuthorization)",
+        "  Step 2: Create the collection (CreateNftCollection)",
+        "Update useCreatorCollections.ts to fetch authorizations via FetchNftCollectionAuthorizationsWithPagination",
+        "Update creatorCollections store to track claimed vs created collections",
+        "Update CollectionList.vue to show pending (claimed but not created) collections",
+        "Remove or update any CreateTokenClass usage for NFTs",
+        "Update validation schemas for new DTOs"
+      ],
+      "passes": false,
+      "notes": "This is a significant architectural change. The new flow requires users to first claim/authorize a collection name, then create the collection.",
+      "testing": {
+        "automated": [
+          "Unit test: grantNftCollectionAuthorization DTO structure",
+          "Unit test: createNftCollection DTO structure",
+          "Unit test: fetchNftCollectionAuthorizations returns authorizations",
+          "Component test: CreateCollectionModal two-step flow works",
+          "Component test: CollectionList shows claimed collections"
+        ],
+        "manual": [
+          "REQUIRED: Claim a collection name with MetaMask signing",
+          "REQUIRED: Create collection from claimed name with MetaMask signing",
+          "REQUIRED: Verify claimed collections appear in list",
+          "REQUIRED: Verify created collections appear correctly"
+        ]
+      },
+      "manualTestingRequired": true,
+      "manualTestingPrompt": "Please test the full NFT collection creation flow: claim a collection name, then create the collection from that claim."
+    },
+    {
+      "category": "hide-ft-creation",
+      "description": "Remove FT creation option from Creators area - FTs are created via Launchpad",
+      "priority": "high",
+      "issue": "Also in the creators area, FTs can't be created here so don't show that option. The launchpad is where users will go for FT creation.",
+      "steps": [
+        "Review CreatorsView.vue to identify any FT creation UI",
+        "Remove or hide any 'Create Fungible Token' buttons or options",
+        "Update CreateCollectionModal.vue to remove isNonFungible toggle (always NFT)",
+        "Add informational text directing users to Launchpad for FT creation",
+        "Update any documentation or tooltips mentioning FT creation",
+        "Consider adding a link to Launchpad for FT creation convenience"
+      ],
+      "passes": false,
+      "notes": "",
+      "testing": {
+        "automated": [
+          "Component test: No FT creation option visible in Creators",
+          "Component test: CreateCollectionModal only creates NFTs",
+          "Component test: Launchpad info/link is present"
+        ],
+        "manual": [
+          "REQUIRED: Verify no way to create FTs in Creators section"
+        ]
+      }
+    },
+    {
+      "category": "transfer-balance-decimals",
+      "description": "Fix balance display in transfer modal - showing incorrect decimal handling",
+      "priority": "critical",
+      "issue": "When choosing to transfer a token, balance is shown but looks to be divided by 100M (10^8) (so it's handling decimals improperly). The quantity value of a balance is the actual value of tokens.",
+      "steps": [
+        "Review TransferModal.vue balance display logic",
+        "Identify where the 10^8 division is occurring",
+        "Check formatTokenBalance utility for incorrect decimal handling",
+        "The quantity value from the API IS the actual token amount - no division needed",
+        "Update TransferModal.vue to show raw quantity without decimal adjustment",
+        "Update TokenCard.vue balance display if same issue exists",
+        "Review MintModal.vue and BurnModal.vue for same issue",
+        "Update any BigNumber conversions that might be dividing incorrectly",
+        "Ensure max amount button uses correct raw quantity"
+      ],
+      "passes": true,
+      "notes": "Fixed: Removed incorrect 10^8 division from formatBalance in tokens.ts store, formatMintAmount in mintSchema.ts, and formatBurnAmount in burnSchema.ts. GalaChain quantity values are already the actual token amounts.",
+      "testing": {
+        "automated": [
+          "Unit test: balance displays without division",
+          "Unit test: max button uses raw quantity",
+          "Component test: TransferModal shows correct balance",
+          "Component test: TokenCard shows correct balance"
+        ],
+        "manual": [
+          "REQUIRED: Verify displayed balance matches actual token balance",
+          "REQUIRED: Verify transfer max amount is correct",
+          "REQUIRED: Complete a transfer and verify amount transferred matches input"
+        ]
+      },
+      "manualTestingRequired": true,
+      "manualTestingPrompt": "Please verify token balances display correctly and that transfers work with the correct amounts."
+    },
+    {
+      "category": "token-burn-option",
+      "description": "Add burn option for owned tokens (not just mint-authorized tokens)",
+      "priority": "medium",
+      "issue": "Owned tokens should have an option to burn as well as the already built transfer",
+      "steps": [
+        "Review current burn button visibility logic in TokenCard.vue",
+        "Current logic: burn only shown if user has burn ALLOWANCE (authority)",
+        "New logic: user can always burn their OWN tokens they hold a balance of",
+        "Update TokenCard.vue to show Burn button when user has balance > 0",
+        "Update BurnModal.vue to handle owner-burn vs authority-burn cases",
+        "Ensure validation allows burning up to owned balance",
+        "Update useBurnToken.ts to handle owner burning their own tokens",
+        "Verify BurnTokensDto works for owners burning their tokens",
+        "Add confirmation that clarifies 'burning YOUR tokens' vs 'burning as authority'"
+      ],
+      "passes": false,
+      "notes": "Users should be able to burn tokens they own, regardless of whether they have special burn authority. Burn authority is for burning OTHER people's tokens.",
+      "testing": {
+        "automated": [
+          "Component test: Burn button shows when user has balance",
+          "Component test: BurnModal validates against owned balance",
+          "Unit test: burn DTO built correctly for owner burn"
+        ],
+        "manual": [
+          "REQUIRED: Burn owned tokens without special authority",
+          "REQUIRED: Verify balance decreases after burn",
+          "REQUIRED: Verify cannot burn more than owned"
+        ]
+      },
+      "manualTestingRequired": true,
+      "manualTestingPrompt": "Please test burning tokens that you own (not as an authority). Verify the burn completes and balance updates."
+    }
+  ],
+  "priorityOrder": [
+    "transfer-balance-decimals",
+    "nft-collection-flow",
+    "balances-with-metadata",
+    "token-identification",
+    "hide-ft-creation",
+    "token-burn-option",
+    "allowances-bidirectional"
+  ],
+  "estimatedComplexity": {
+    "transfer-balance-decimals": "low - likely just removing incorrect conversion",
+    "nft-collection-flow": "high - new endpoints, two-step flow, store updates",
+    "balances-with-metadata": "medium - new endpoint, type updates, UI updates",
+    "token-identification": "low - utility function and UI updates",
+    "hide-ft-creation": "low - remove UI elements",
+    "token-burn-option": "low-medium - update visibility logic and validation",
+    "allowances-bidirectional": "medium - may be limited by API capabilities"
+  }
+}
