@@ -1,9 +1,25 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import BigNumber from 'bignumber.js'
-import type { TokenBalance } from '@gala-chain/connect'
-import type { TokenAllowance, AllowanceType } from '@gala-chain/api'
+import type { TokenBalance as TokenBalanceConnect } from '@gala-chain/connect'
+import type { TokenAllowance, AllowanceType, TokenBalanceWithMetadata, TokenClass, TokenBalance as TokenBalanceApi } from '@gala-chain/api'
 import type { NFTDisplay, CollectionDisplay } from '@shared/types/display'
+
+// Use a unified type that works for both API sources
+type TokenBalanceAny = TokenBalanceConnect | TokenBalanceApi
+
+// Interface for accessing TokenBalance properties regardless of source
+// This helps with type casting when accessing properties that may be private in one variant
+interface TokenBalanceData {
+  collection: string
+  category: string
+  type: string
+  additionalKey: string
+  quantity?: BigNumber
+  instanceIds?: BigNumber[]
+  lockedHolds?: Array<{ quantity: BigNumber; instanceId?: BigNumber }>
+  inUseHolds?: Array<{ quantity: BigNumber; instanceId?: BigNumber }>
+}
 
 /**
  * Sort options for the NFT list
@@ -14,45 +30,54 @@ export type NFTSortOption = 'collection-asc' | 'collection-desc' | 'instance-asc
  * Convert a TokenBalance (with NFT instance) to NFTDisplay
  */
 function toNFTDisplay(
-  balance: TokenBalance,
+  balance: TokenBalanceAny,
   instanceId: BigNumber,
-  burnAllowances: TokenAllowance[]
+  burnAllowances: TokenAllowance[],
+  tokenMetadata?: TokenClass
 ): NFTDisplay {
-  const instanceKey = `${balance.collection}|${balance.category}|${balance.type}|${balance.additionalKey}|${instanceId.toString()}`
+  // Cast to data interface for property access (avoids private property issues)
+  const b = balance as unknown as TokenBalanceData
+  const instanceKey = `${b.collection}|${b.category}|${b.type}|${b.additionalKey}|${instanceId.toString()}`
 
   // Calculate if NFT is locked or in use
   // TokenHold has instanceId (singular) for the specific instance being held
-  const lockedInstances = balance.lockedHolds?.map(h => (h as { instanceId?: BigNumber }).instanceId).filter(Boolean) || []
-  const inUseInstances = balance.inUseHolds?.map(h => (h as { instanceId?: BigNumber }).instanceId).filter(Boolean) || []
+  const lockedInstances = b.lockedHolds?.map((h: { instanceId?: BigNumber }) => h.instanceId).filter(Boolean) || []
+  const inUseInstances = b.inUseHolds?.map((h: { instanceId?: BigNumber }) => h.instanceId).filter(Boolean) || []
 
-  const isLocked = lockedInstances.some(id => new BigNumber(id?.toString() || '0').eq(instanceId))
-  const isInUse = inUseInstances.some(id => new BigNumber(id?.toString() || '0').eq(instanceId))
+  const isLocked = lockedInstances.some((id: BigNumber | undefined) => new BigNumber(id?.toString() || '0').eq(instanceId))
+  const isInUse = inUseInstances.some((id: BigNumber | undefined) => new BigNumber(id?.toString() || '0').eq(instanceId))
 
   // Check for burn allowance for this NFT
   const hasBurnAllowance = burnAllowances.some(
-    a => a.collection === balance.collection &&
-         a.category === balance.category &&
-         a.type === balance.type &&
-         a.additionalKey === balance.additionalKey &&
+    a => a.collection === b.collection &&
+         a.category === b.category &&
+         a.type === b.type &&
+         a.additionalKey === b.additionalKey &&
          (a.instance === undefined || new BigNumber(a.instance?.toString() || '0').eq(instanceId) || new BigNumber(a.instance?.toString() || '0').isZero())
   )
 
   // Can transfer if not locked and not in use
   const canTransfer = !isLocked && !isInUse
 
+  // Use metadata if available, otherwise fall back to defaults
+  const name = tokenMetadata?.name || b.type || 'Unknown NFT'
+  const symbol = tokenMetadata?.symbol || b.type || '???'
+  const description = tokenMetadata?.description || ''
+  const image = tokenMetadata?.image || ''
+  const rarity = tokenMetadata?.rarity
+
   return {
     instanceKey,
-    collection: balance.collection,
-    category: balance.category,
-    type: balance.type,
-    additionalKey: balance.additionalKey,
+    collection: b.collection,
+    category: b.category,
+    type: b.type,
+    additionalKey: b.additionalKey,
     instance: instanceId.toString(),
-    // Name/symbol fallback to type for now (can be enhanced with metadata)
-    name: balance.type || 'Unknown NFT',
-    symbol: balance.type || '???',
-    description: '',
-    image: '', // Would come from metadata
-    rarity: undefined,
+    name,
+    symbol,
+    description,
+    image,
+    rarity,
     isLocked,
     isInUse,
     canTransfer,
@@ -62,6 +87,7 @@ function toNFTDisplay(
 
 /**
  * Extract unique collections from NFT balances
+ * Now preserves metadata like image, description, etc.
  */
 function extractCollections(nfts: NFTDisplay[]): CollectionDisplay[] {
   const collectionMap = new Map<string, CollectionDisplay>()
@@ -74,7 +100,7 @@ function extractCollections(nfts: NFTDisplay[]): CollectionDisplay[] {
       const existing = collectionMap.get(collectionKey)!
       existing.ownedCount++
     } else {
-      // Create new collection entry
+      // Create new collection entry with metadata from the NFT
       collectionMap.set(collectionKey, {
         collectionKey,
         collection: nft.collection,
@@ -83,8 +109,8 @@ function extractCollections(nfts: NFTDisplay[]): CollectionDisplay[] {
         additionalKey: nft.additionalKey,
         name: nft.name,
         symbol: nft.symbol,
-        description: '',
-        image: '',
+        description: nft.description,
+        image: nft.image,
         isNonFungible: true,
         maxSupply: '0',
         totalSupply: '0',
@@ -112,8 +138,11 @@ export const useNFTsStore = defineStore('nfts', () => {
   const lastFetched = ref<number | null>(null)
 
   // Raw data from API (for re-processing when allowances change)
-  let rawBalances: TokenBalance[] = []
+  // Use TokenBalanceAny to handle both @gala-chain/connect and @gala-chain/api versions
+  let rawBalances: TokenBalanceAny[] = []
+  let rawBalancesWithMetadata: TokenBalanceWithMetadata[] = []
   let rawBurnAllowances: TokenAllowance[] = []
+  let usingMetadata = false // Track whether we have metadata
 
   // Getters
   const filteredNFTs = computed(() => {
@@ -179,9 +208,24 @@ export const useNFTsStore = defineStore('nfts', () => {
 
   /**
    * Set the raw balances and process into display NFTs
+   * @deprecated Use setBalancesWithMetadata for better display data
    */
-  function setBalances(balances: TokenBalance[]): void {
+  function setBalances(balances: TokenBalanceAny[]): void {
     rawBalances = balances
+    rawBalancesWithMetadata = []
+    usingMetadata = false
+    processNFTs()
+  }
+
+  /**
+   * Set the raw balances with metadata and process into display NFTs
+   * This is the preferred method as it includes token class data (name, symbol, image, etc.)
+   */
+  function setBalancesWithMetadata(balancesWithMetadata: TokenBalanceWithMetadata[]): void {
+    rawBalancesWithMetadata = balancesWithMetadata
+    // Also extract plain balances for backward compatibility
+    rawBalances = balancesWithMetadata.map(bm => bm.balance)
+    usingMetadata = true
     processNFTs()
   }
 
@@ -199,26 +243,57 @@ export const useNFTsStore = defineStore('nfts', () => {
   }
 
   /**
+   * Check if a balance has non-fungible instances (NFT)
+   * Cast to any to access instanceIds regardless of TokenBalance variant
+   */
+  function hasNonFungibleInstances(balance: TokenBalanceAny): boolean {
+    const b = balance as { instanceIds?: BigNumber[] }
+    if (!b.instanceIds || b.instanceIds.length === 0) return false
+    return b.instanceIds.some((id: BigNumber) => {
+      const instance = new BigNumber(id?.toString() || '0')
+      return !instance.isZero()
+    })
+  }
+
+  /**
+   * Get instance IDs from a balance
+   * Cast to any to access instanceIds regardless of TokenBalance variant
+   */
+  function getInstanceIds(balance: TokenBalanceAny): BigNumber[] {
+    const b = balance as { instanceIds?: BigNumber[] }
+    return b.instanceIds || []
+  }
+
+  /**
    * Process raw balances into display NFTs
    */
   function processNFTs(): void {
-    // Filter for NFT tokens (have instanceIds with non-zero values)
-    const nftBalances = rawBalances.filter(b => {
-      if (!b.instanceIds || b.instanceIds.length === 0) return false
-      // Check if any instance is non-zero (NFTs have non-zero instance IDs)
-      return b.instanceIds.some(id => {
-        const instance = new BigNumber(id?.toString() || '0')
-        return !instance.isZero()
-      })
-    })
-
-    // Flatten to individual NFT instances
     const nftInstances: NFTDisplay[] = []
-    for (const balance of nftBalances) {
-      for (const instanceId of balance.instanceIds || []) {
-        const instance = new BigNumber(instanceId?.toString() || '0')
-        if (!instance.isZero()) {
-          nftInstances.push(toNFTDisplay(balance, instance, rawBurnAllowances))
+
+    if (usingMetadata && rawBalancesWithMetadata.length > 0) {
+      // Use balances with metadata - filter for NFT tokens
+      const nftBalancesWithMetadata = rawBalancesWithMetadata.filter(bm => hasNonFungibleInstances(bm.balance))
+
+      // Flatten to individual NFT instances with metadata
+      for (const bm of nftBalancesWithMetadata) {
+        for (const instanceId of getInstanceIds(bm.balance)) {
+          const instance = new BigNumber(instanceId?.toString() || '0')
+          if (!instance.isZero()) {
+            nftInstances.push(toNFTDisplay(bm.balance, instance, rawBurnAllowances, bm.token))
+          }
+        }
+      }
+    } else {
+      // Fallback to plain balances without metadata
+      const nftBalances = rawBalances.filter(b => hasNonFungibleInstances(b))
+
+      // Flatten to individual NFT instances
+      for (const balance of nftBalances) {
+        for (const instanceId of getInstanceIds(balance)) {
+          const instance = new BigNumber(instanceId?.toString() || '0')
+          if (!instance.isZero()) {
+            nftInstances.push(toNFTDisplay(balance, instance, rawBurnAllowances))
+          }
         }
       }
     }
@@ -271,7 +346,9 @@ export const useNFTsStore = defineStore('nfts', () => {
     collections.value = []
     selectedCollection.value = null
     rawBalances = []
+    rawBalancesWithMetadata = []
     rawBurnAllowances = []
+    usingMetadata = false
     lastFetched.value = null
     error.value = null
   }
@@ -310,6 +387,7 @@ export const useNFTsStore = defineStore('nfts', () => {
 
     // Actions
     setBalances,
+    setBalancesWithMetadata,
     setAllowances,
     setLoading,
     setError,

@@ -1,9 +1,27 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import BigNumber from 'bignumber.js'
-import type { TokenBalance } from '@gala-chain/connect'
-import type { TokenAllowance, AllowanceType } from '@gala-chain/api'
+import type { TokenBalance as TokenBalanceConnect } from '@gala-chain/connect'
+import type { TokenAllowance, AllowanceType, TokenBalanceWithMetadata, TokenClass, TokenBalance as TokenBalanceApi } from '@gala-chain/api'
 import type { FungibleTokenDisplay, AllowanceDisplay } from '@shared/types/display'
+
+// Use a unified type that works for both API sources
+// TokenBalance from @gala-chain/api has some private properties that don't exist in @gala-chain/connect version
+// We use 'any' for the internal raw storage and type-cast when needed
+type TokenBalanceAny = TokenBalanceConnect | TokenBalanceApi
+
+// Interface for accessing TokenBalance properties regardless of source
+// This helps with type casting when accessing properties that may be private in one variant
+interface TokenBalanceData {
+  collection: string
+  category: string
+  type: string
+  additionalKey: string
+  quantity?: BigNumber
+  instanceIds?: BigNumber[]
+  lockedHolds?: Array<{ quantity: BigNumber; instanceId?: BigNumber }>
+  inUseHolds?: Array<{ quantity: BigNumber; instanceId?: BigNumber }>
+}
 
 /**
  * Sort options for the token list
@@ -42,61 +60,68 @@ function formatBalance(balance: BigNumber, _decimals: number = 8): string {
 }
 
 /**
- * Convert a TokenBalance to FungibleTokenDisplay
+ * Convert a TokenBalance (with optional metadata) to FungibleTokenDisplay
  */
 function toFungibleTokenDisplay(
-  balance: TokenBalance,
+  balance: TokenBalanceAny,
   mintAllowances: TokenAllowance[],
-  burnAllowances: TokenAllowance[]
+  burnAllowances: TokenAllowance[],
+  tokenMetadata?: TokenClass
 ): FungibleTokenDisplay {
-  const tokenKey = `${balance.collection}|${balance.category}|${balance.type}|${balance.additionalKey}`
+  // Cast to data interface for property access (avoids private property issues)
+  const b = balance as unknown as TokenBalanceData
+  const tokenKey = `${b.collection}|${b.category}|${b.type}|${b.additionalKey}`
 
   // Calculate balances
-  const totalBalance = new BigNumber(balance.quantity?.toString() || '0')
-  const lockedBalance = calculateLockedBalance(balance.lockedHolds)
-  const inUseBalance = calculateLockedBalance(balance.inUseHolds)
+  const totalBalance = new BigNumber(b.quantity?.toString() || '0')
+  const lockedBalance = calculateLockedBalance(b.lockedHolds)
+  const inUseBalance = calculateLockedBalance(b.inUseHolds)
   const spendableBalance = totalBalance.minus(lockedBalance).minus(inUseBalance)
 
   // Check for mint/burn allowances for this token
   const hasMintAllowance = mintAllowances.some(
-    a => a.collection === balance.collection &&
-         a.category === balance.category &&
-         a.type === balance.type &&
-         a.additionalKey === balance.additionalKey
+    a => a.collection === b.collection &&
+         a.category === b.category &&
+         a.type === b.type &&
+         a.additionalKey === b.additionalKey
   )
 
   const hasBurnAllowance = burnAllowances.some(
-    a => a.collection === balance.collection &&
-         a.category === balance.category &&
-         a.type === balance.type &&
-         a.additionalKey === balance.additionalKey
+    a => a.collection === b.collection &&
+         a.category === b.category &&
+         a.type === b.type &&
+         a.additionalKey === b.additionalKey
   )
 
   // Get mint allowance amount if exists
   const mintAllowance = mintAllowances.find(
-    a => a.collection === balance.collection &&
-         a.category === balance.category &&
-         a.type === balance.type &&
-         a.additionalKey === balance.additionalKey
+    a => a.collection === b.collection &&
+         a.category === b.category &&
+         a.type === b.type &&
+         a.additionalKey === b.additionalKey
   )
   const mintAllowanceRemaining = mintAllowance
     ? new BigNumber(mintAllowance.quantity?.toString() || '0')
         .minus(new BigNumber(mintAllowance.quantitySpent?.toString() || '0'))
     : undefined
 
-  const decimals = 8 // Default decimals
+  // Use metadata if available, otherwise fall back to defaults
+  const decimals = tokenMetadata?.decimals ?? 8
+  const name = tokenMetadata?.name || b.type || 'Unknown Token'
+  const symbol = tokenMetadata?.symbol || b.type || '???'
+  const description = tokenMetadata?.description || ''
+  const image = tokenMetadata?.image || ''
 
   return {
     tokenKey,
-    collection: balance.collection,
-    category: balance.category,
-    type: balance.type,
-    additionalKey: balance.additionalKey,
-    // Name/symbol fallback to type for now (can be enhanced with metadata)
-    name: balance.type || 'Unknown Token',
-    symbol: balance.type || '???',
-    description: '',
-    image: '',
+    collection: b.collection,
+    category: b.category,
+    type: b.type,
+    additionalKey: b.additionalKey,
+    name,
+    symbol,
+    description,
+    image,
     decimals,
     balanceRaw: totalBalance.toString(),
     balanceFormatted: formatBalance(totalBalance, decimals),
@@ -162,9 +187,12 @@ export const useTokensStore = defineStore('tokens', () => {
 
   // Raw data from API (for re-processing when allowances change)
   // Using plain variables to avoid Vue reactivity wrapping complex GalaChain types
-  let rawBalances: TokenBalance[] = []
+  // Use TokenBalanceAny to handle both @gala-chain/connect and @gala-chain/api versions
+  let rawBalances: TokenBalanceAny[] = []
+  let rawBalancesWithMetadata: TokenBalanceWithMetadata[] = []
   let rawMintAllowances: TokenAllowance[] = []
   let rawBurnAllowances: TokenAllowance[] = []
+  let usingMetadata = false // Track whether we have metadata
 
   // Getters
   const sortedTokens = computed(() => {
@@ -213,9 +241,24 @@ export const useTokensStore = defineStore('tokens', () => {
 
   /**
    * Set the raw balances and process into display tokens
+   * @deprecated Use setBalancesWithMetadata for better display data
    */
-  function setBalances(balances: TokenBalance[]): void {
+  function setBalances(balances: TokenBalanceAny[]): void {
     rawBalances = balances
+    rawBalancesWithMetadata = []
+    usingMetadata = false
+    processTokens()
+  }
+
+  /**
+   * Set the raw balances with metadata and process into display tokens
+   * This is the preferred method as it includes token class data (name, symbol, image, etc.)
+   */
+  function setBalancesWithMetadata(balancesWithMetadata: TokenBalanceWithMetadata[]): void {
+    rawBalancesWithMetadata = balancesWithMetadata
+    // Also extract plain balances for backward compatibility
+    rawBalances = balancesWithMetadata.map(bm => bm.balance)
+    usingMetadata = true
     processTokens()
   }
 
@@ -238,19 +281,35 @@ export const useTokensStore = defineStore('tokens', () => {
   }
 
   /**
+   * Check if a balance represents a fungible token (instance 0 or no instances)
+   * Cast to any to access instanceIds regardless of TokenBalance variant
+   */
+  function isFungibleBalance(balance: TokenBalanceAny): boolean {
+    const b = balance as { instanceIds?: BigNumber[] }
+    if (!b.instanceIds || b.instanceIds.length === 0) return true
+    const instance = new BigNumber(b.instanceIds[0]?.toString() || '0')
+    return instance.isZero()
+  }
+
+  /**
    * Process raw balances into display tokens
    */
   function processTokens(): void {
-    // Filter for fungible tokens only (no instanceIds or first instance is 0)
-    const fungibleBalances = rawBalances.filter(b => {
-      if (!b.instanceIds || b.instanceIds.length === 0) return true
-      const instance = new BigNumber(b.instanceIds[0]?.toString() || '0')
-      return instance.isZero()
-    })
+    if (usingMetadata && rawBalancesWithMetadata.length > 0) {
+      // Use balances with metadata - filter for fungible tokens
+      const fungibleBalancesWithMetadata = rawBalancesWithMetadata.filter(bm => isFungibleBalance(bm.balance))
 
-    tokens.value = fungibleBalances.map(b =>
-      toFungibleTokenDisplay(b, rawMintAllowances, rawBurnAllowances)
-    )
+      tokens.value = fungibleBalancesWithMetadata.map(bm =>
+        toFungibleTokenDisplay(bm.balance, rawMintAllowances, rawBurnAllowances, bm.token)
+      )
+    } else {
+      // Fallback to plain balances without metadata
+      const fungibleBalances = rawBalances.filter(b => isFungibleBalance(b))
+
+      tokens.value = fungibleBalances.map(b =>
+        toFungibleTokenDisplay(b, rawMintAllowances, rawBurnAllowances)
+      )
+    }
 
     lastFetched.value = Date.now()
   }
@@ -290,8 +349,10 @@ export const useTokensStore = defineStore('tokens', () => {
     tokens.value = []
     allowances.value = []
     rawBalances = []
+    rawBalancesWithMetadata = []
     rawMintAllowances = []
     rawBurnAllowances = []
+    usingMetadata = false
     lastFetched.value = null
     error.value = null
   }
@@ -330,6 +391,7 @@ export const useTokensStore = defineStore('tokens', () => {
 
     // Actions
     setBalances,
+    setBalancesWithMetadata,
     setAllowances,
     setLoading,
     setLoadingAllowances,

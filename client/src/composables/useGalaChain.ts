@@ -10,6 +10,7 @@ import { computed, ref } from 'vue'
 import { useWalletStore } from '@/stores/wallet'
 import {
   fetchBalances,
+  fetchBalancesWithMetadata,
   fetchAllowances,
   transfer,
   mint,
@@ -17,6 +18,7 @@ import {
   getGalaChainConfig,
   type TokenInstanceInput,
   type TokenBalance,
+  type TokenBalanceWithMetadata,
 } from '@/lib/galachainClient'
 import { GalaChainError, parseWalletError, logError } from '@/lib/galachainErrors'
 import type { TokenAllowance } from '@gala-chain/api'
@@ -111,6 +113,7 @@ export function useGalaChain() {
    * This is a read-only operation that does NOT require wallet connection
    * @param owner - Owner address to fetch balances for (required)
    * @param filters - Optional filters for collection, category, type, additionalKey
+   * @deprecated Use getBalancesWithMetadata for better display data
    */
   async function getBalances(
     owner: string,
@@ -127,6 +130,30 @@ export function useGalaChain() {
       }
       return fetchBalances(owner, filters)
     }, 'getBalances')
+  }
+
+  /**
+   * Fetch token balances with metadata (includes token class info like name, symbol, image)
+   * This is the preferred method for displaying tokens as it includes all display data
+   * This is a read-only operation that does NOT require wallet connection
+   * @param owner - Owner address to fetch balances for (required)
+   * @param filters - Optional filters for collection, category, type, additionalKey
+   */
+  async function getBalancesWithMetadata(
+    owner: string,
+    filters?: {
+      collection?: string
+      category?: string
+      type?: string
+      additionalKey?: string
+    }
+  ): Promise<OperationResult<TokenBalanceWithMetadata[]>> {
+    return executeOperation(async () => {
+      if (!owner) {
+        throw new GalaChainError('Owner address is required.', 'NO_ADDRESS')
+      }
+      return fetchBalancesWithMetadata(owner, filters)
+    }, 'getBalancesWithMetadata')
   }
 
   /**
@@ -238,6 +265,7 @@ export function useGalaChain() {
 
     // Read operations (no signing required)
     getBalances,
+    getBalancesWithMetadata,
     getAllowances,
 
     // Write operations (signing required)

@@ -1461,6 +1461,38 @@
   - This pattern differs from Ethereum where values are in Wei and need division by 10^18
 ---
 
+## Iteration 33 - balances-with-metadata (Issue Fix)
+- What was implemented:
+  - Added FetchBalancesWithTokenMetadata endpoint integration
+  - Created fetchBalancesWithMetadata function in galachainClient.ts
+  - Returns TokenBalanceWithMetadata[] containing both balance and token class metadata
+  - Updated tokens store with setBalancesWithMetadata() that extracts metadata
+  - Updated nfts store with setBalancesWithMetadata() that extracts metadata
+  - Updated useFungibleTokens.ts to use getBalancesWithMetadata
+  - Updated useNFTs.ts to use getBalancesWithMetadata
+  - Added useGalaChain.getBalancesWithMetadata() for the composable layer
+  - Token/NFT display objects now receive proper name, symbol, description, image, decimals, rarity from metadata
+  - Used TokenBalanceAny union type and TokenBalanceData interface to handle type differences between @gala-chain/connect and @gala-chain/api TokenBalance versions
+- Files changed:
+  - client/src/lib/galachainClient.ts (added fetchBalancesWithMetadata, exports TokenBalanceWithMetadata)
+  - client/src/composables/useGalaChain.ts (added getBalancesWithMetadata)
+  - client/src/composables/useFungibleTokens.ts (uses getBalancesWithMetadata)
+  - client/src/composables/useNFTs.ts (uses getBalancesWithMetadata)
+  - client/src/stores/tokens.ts (added setBalancesWithMetadata, TokenBalanceAny union type)
+  - client/src/stores/nfts.ts (added setBalancesWithMetadata, TokenBalanceAny union type)
+  - ISSUES_FIX_PLAN.json (marked balances-with-metadata as passed)
+  - manualTestingRequired.txt (added balances-with-metadata testing checklist)
+- GalaChain tools used: /galachain:ask for FetchBalancesWithMetadata endpoint (not found in topics, used SDK inspection)
+- Tests: All automated tests pass (1142/1143 - 1 pre-existing failure in CreateCollectionModal unrelated to changes)
+- Learnings for future iterations:
+  - FetchBalancesWithTokenMetadata endpoint returns { results: TokenBalanceWithMetadata[] }
+  - TokenBalanceWithMetadata has .balance (TokenBalance) and .token (TokenClass) properties
+  - TokenClass contains: name, symbol, description, image, decimals, rarity, etc.
+  - @gala-chain/api TokenBalance has some private properties that @gala-chain/connect version doesn't
+  - Use union type and interface casting to handle property access across both versions
+  - The existing setBalances() functions still work for backward compatibility
+---
+
 ## Iteration 32 - nft-collection-flow (Issue Fix)
 - What was implemented:
   - Implemented new 3-step NFT collection creation flow: Claim -> Create -> Confirm

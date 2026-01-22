@@ -7,7 +7,6 @@
 
 import { computed, watch } from 'vue'
 import { AllowanceType } from '@gala-chain/api'
-import type { TokenBalance } from '@gala-chain/connect'
 import { useTokensStore, type TokenSortOption } from '@/stores/tokens'
 import { useWalletStore } from '@/stores/wallet'
 import { useGalaChain } from '@/composables/useGalaChain'
@@ -36,7 +35,7 @@ export function useFungibleTokens() {
   const walletAddress = computed(() => walletStore.address)
 
   /**
-   * Fetch token balances from GalaChain
+   * Fetch token balances from GalaChain with metadata (name, symbol, image, etc.)
    */
   async function fetchTokens(): Promise<void> {
     if (!walletStore.connected || !walletStore.address) {
@@ -47,11 +46,11 @@ export function useFungibleTokens() {
     tokensStore.setError(null)
 
     try {
-      const result = await galaChain.getBalances(walletStore.address!)
+      // Use getBalancesWithMetadata to get token class info (name, symbol, image)
+      const result = await galaChain.getBalancesWithMetadata(walletStore.address!)
 
       if (result.success) {
-        // Cast to TokenBalance from @gala-chain/connect which is the actual return type
-        tokensStore.setBalances(result.data as unknown as TokenBalance[])
+        tokensStore.setBalancesWithMetadata(result.data)
       } else {
         tokensStore.setError(result.error)
       }

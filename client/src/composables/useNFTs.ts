@@ -8,7 +8,6 @@
 import { computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { AllowanceType } from '@gala-chain/api'
-import type { TokenBalance } from '@gala-chain/connect'
 import { useNFTsStore, type NFTSortOption } from '@/stores/nfts'
 import { useWalletStore } from '@/stores/wallet'
 import { useGalaChain } from '@/composables/useGalaChain'
@@ -39,7 +38,7 @@ export function useNFTs() {
   const walletAddress = computed(() => walletStore.address)
 
   /**
-   * Fetch NFT balances from GalaChain
+   * Fetch NFT balances from GalaChain with metadata (name, symbol, image, etc.)
    */
   async function fetchNFTs(): Promise<void> {
     if (!walletStore.connected || !walletStore.address) {
@@ -50,11 +49,11 @@ export function useNFTs() {
     nftsStore.setError(null)
 
     try {
-      const result = await galaChain.getBalances(walletStore.address!)
+      // Use getBalancesWithMetadata to get token class info (name, symbol, image)
+      const result = await galaChain.getBalancesWithMetadata(walletStore.address!)
 
       if (result.success) {
-        // Cast to TokenBalance from @gala-chain/connect which is the actual return type
-        nftsStore.setBalances(result.data as unknown as TokenBalance[])
+        nftsStore.setBalancesWithMetadata(result.data)
       } else {
         nftsStore.setError(result.error)
       }

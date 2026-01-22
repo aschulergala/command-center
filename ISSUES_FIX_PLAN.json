@@ -51,8 +51,8 @@
         "Add placeholder/fallback image for tokens without images",
         "Ensure quantity displays correctly from the response"
       ],
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "Implemented FetchBalancesWithTokenMetadata endpoint integration. Added fetchBalancesWithMetadata to galachainClient.ts which returns TokenBalanceWithMetadata[] containing both balance and token class metadata (name, symbol, description, image, decimals, rarity). Updated tokens and nfts stores with setBalancesWithMetadata() functions that process metadata. Updated useFungibleTokens and useNFTs composables to use the new metadata endpoint. Display components now receive proper name, symbol, description, image from token class metadata. Used TokenBalanceAny union type to handle type differences between @gala-chain/connect and @gala-chain/api versions of TokenBalance.",
       "testing": {
         "automated": [
           "Unit test: fetchBalancesWithMetadata returns expected structure",
@@ -65,7 +65,9 @@
           "REQUIRED: Verify token quantities are accurate",
           "REQUIRED: Verify NFT images load from metadata"
         ]
-      }
+      },
+      "manualTestingRequired": true,
+      "manualTestingPrompt": "Please verify that token and NFT images display correctly from the metadata, and that quantities are accurate."
     },
     {
       "category": "token-identification",

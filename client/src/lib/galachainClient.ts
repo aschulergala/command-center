@@ -8,7 +8,7 @@
 
 import { BrowserConnectClient, TokenApi, GalaChainResponseError } from '@gala-chain/connect'
 import type { TokenBalance, TokenInstanceKey, TokenClassKey, TokenClass } from '@gala-chain/connect'
-import type { TokenAllowance, FetchAllowancesResponse, UserRef } from '@gala-chain/api'
+import type { TokenAllowance, FetchAllowancesResponse, UserRef, TokenBalanceWithMetadata, FetchBalancesWithTokenMetadataResponse } from '@gala-chain/api'
 import BigNumber from 'bignumber.js'
 import { config } from './config'
 import { GalaChainError, logError } from './galachainErrors'
@@ -172,6 +172,34 @@ export async function fetchBalances(
   }
 
   return unsignedPost<TokenBalance[]>('FetchBalances', dto)
+}
+
+/**
+ * Fetch token balances with metadata (includes token class info like name, symbol, image)
+ * This is the preferred method for displaying tokens as it includes all display data
+ * This is a read-only operation that does NOT require wallet signing
+ */
+export async function fetchBalancesWithMetadata(
+  owner: string,
+  filters?: {
+    collection?: string
+    category?: string
+    type?: string
+    additionalKey?: string
+  }
+): Promise<TokenBalanceWithMetadata[]> {
+  const dto = {
+    owner: owner as UserRef,
+    ...filters,
+  }
+
+  const response = await unsignedPost<FetchBalancesWithTokenMetadataResponse>(
+    'FetchBalancesWithTokenMetadata',
+    dto
+  )
+
+  // FetchBalancesWithTokenMetadata returns { results: TokenBalanceWithMetadata[] }
+  return response.results || []
 }
 
 /**
@@ -585,4 +613,4 @@ export function getGalaChainConfig() {
 /**
  * Re-export types for convenience
  */
-export type { TokenBalance, TokenInstanceKey, TokenClassKey, TokenClass }
+export type { TokenBalance, TokenInstanceKey, TokenClassKey, TokenClass, TokenBalanceWithMetadata }

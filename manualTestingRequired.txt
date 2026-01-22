@@ -535,6 +535,39 @@ Please test the full NFT collection creation flow: claim a collection name, then
 
 ---
 
+## balances-with-metadata (Issue Fix - Iteration 33)
+
+### Test Requirements
+Please verify that token and NFT images display correctly from the metadata, and that quantities are accurate.
+
+### Checklist
+- [ ] Token images display in TokenCard when available in metadata
+- [ ] Token placeholder/initials shows when no image in metadata
+- [ ] Token name displays from metadata (not just type field)
+- [ ] Token symbol displays from metadata
+- [ ] Token description is available in display data
+- [ ] Token decimals come from metadata (affects balance formatting)
+- [ ] NFT images display in NFTCard when available in metadata
+- [ ] NFT name displays from metadata
+- [ ] NFT rarity displays from metadata (if present)
+- [ ] Collection image displays in collection cards
+- [ ] Quantities/balances are accurate (matching what you expect)
+- [ ] No 10^8 division issues (balances show actual amounts)
+
+### How to Test
+1. Start the dev server: `npm run dev`
+2. Connect your wallet using the Connect Wallet button
+3. Navigate to the Tokens page
+4. Verify tokens with images show the image
+5. Verify tokens without images show placeholder with initials
+6. Check that token names/symbols match the token class metadata
+7. Navigate to the NFTs page
+8. Verify NFT images display correctly
+9. Check that NFT names/descriptions come from metadata
+10. Navigate to Creators page and verify collection images show
+
+---
+
 ## responsive-design (Iteration 26)
 
 ### Test Requirements
