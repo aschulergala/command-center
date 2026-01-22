@@ -4,6 +4,7 @@ import BigNumber from 'bignumber.js'
 import type { TokenBalance as TokenBalanceConnect } from '@gala-chain/connect'
 import type { TokenAllowance, AllowanceType, TokenBalanceWithMetadata, TokenClass, TokenBalance as TokenBalanceApi } from '@gala-chain/api'
 import type { NFTDisplay, CollectionDisplay } from '@shared/types/display'
+import { getTokenIdentifier } from '@/lib/tokenUtils'
 
 // Use a unified type that works for both API sources
 type TokenBalanceAny = TokenBalanceConnect | TokenBalanceApi
@@ -60,8 +61,10 @@ function toNFTDisplay(
   const canTransfer = !isLocked && !isInUse
 
   // Use metadata if available, otherwise fall back to defaults
-  const name = tokenMetadata?.name || b.type || 'Unknown NFT'
-  const symbol = tokenMetadata?.symbol || b.type || '???'
+  // For default name/symbol, use getTokenIdentifier which returns collection if not 'Token', otherwise type
+  const tokenIdentifier = getTokenIdentifier(b)
+  const name = tokenMetadata?.name || tokenIdentifier || 'Unknown NFT'
+  const symbol = tokenMetadata?.symbol || tokenIdentifier || '???'
   const description = tokenMetadata?.description || ''
   const image = tokenMetadata?.image || ''
   const rarity = tokenMetadata?.rarity

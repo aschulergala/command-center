@@ -568,6 +568,30 @@ Please verify that token and NFT images display correctly from the metadata, and
 
 ---
 
+## token-identification (Issue Fix)
+
+### Test Requirements
+Please verify that tokens are identified by their collection field if it is not 'Token', otherwise by their type field.
+
+### Checklist
+- [ ] Tokens with custom collection names (not 'Token') show collection name as identifier
+- [ ] Tokens with 'Token' collection show the type field as identifier
+- [ ] NFTs with custom collection names show collection name as identifier
+- [ ] NFTs with 'Token' collection show the type field as identifier
+- [ ] Token/NFT sorting by name uses the correct identifier
+
+### How to Test
+1. Start the dev server: `npm run dev`
+2. Connect your wallet using the Connect Wallet button
+3. Navigate to the Tokens page
+4. Look for tokens that have a custom collection (not 'Token')
+5. Verify these tokens show the collection name as their display name
+6. Look for tokens with 'Token' as the collection
+7. Verify these tokens show the type field as their display name
+8. Navigate to the NFTs page and verify the same behavior
+
+---
+
 ## responsive-design (Iteration 26)
 
 ### Test Requirements

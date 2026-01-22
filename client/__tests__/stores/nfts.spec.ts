@@ -244,8 +244,9 @@ describe('nfts store', () => {
       store.setSort('name-asc')
 
       const sorted = store.sortedNFTs
-      // Character comes before Sword alphabetically
-      expect(sorted[0].name).toBe('Character')
+      // When collection is not 'Token', name is derived from collection
+      // AnotherCollection comes before TestCollection alphabetically
+      expect(sorted[0].name).toBe('AnotherCollection')
     })
 
     it('should sort by name descending', () => {
@@ -254,8 +255,9 @@ describe('nfts store', () => {
       store.setSort('name-desc')
 
       const sorted = store.sortedNFTs
-      // Sword comes after Character alphabetically
-      expect(sorted[0].name).toBe('Sword')
+      // When collection is not 'Token', name is derived from collection
+      // TestCollection comes after AnotherCollection alphabetically
+      expect(sorted[0].name).toBe('TestCollection')
     })
   })
 

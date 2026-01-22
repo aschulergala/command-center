@@ -4,6 +4,7 @@ import BigNumber from 'bignumber.js'
 import type { TokenBalance as TokenBalanceConnect } from '@gala-chain/connect'
 import type { TokenAllowance, AllowanceType, TokenBalanceWithMetadata, TokenClass, TokenBalance as TokenBalanceApi } from '@gala-chain/api'
 import type { FungibleTokenDisplay, AllowanceDisplay } from '@shared/types/display'
+import { getTokenIdentifier } from '@/lib/tokenUtils'
 
 // Use a unified type that works for both API sources
 // TokenBalance from @gala-chain/api has some private properties that don't exist in @gala-chain/connect version
@@ -106,9 +107,11 @@ function toFungibleTokenDisplay(
     : undefined
 
   // Use metadata if available, otherwise fall back to defaults
+  // For default name/symbol, use getTokenIdentifier which returns collection if not 'Token', otherwise type
+  const tokenIdentifier = getTokenIdentifier(b)
   const decimals = tokenMetadata?.decimals ?? 8
-  const name = tokenMetadata?.name || b.type || 'Unknown Token'
-  const symbol = tokenMetadata?.symbol || b.type || '???'
+  const name = tokenMetadata?.name || tokenIdentifier || 'Unknown Token'
+  const symbol = tokenMetadata?.symbol || tokenIdentifier || '???'
   const description = tokenMetadata?.description || ''
   const image = tokenMetadata?.image || ''
 

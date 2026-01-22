@@ -85,8 +85,8 @@
         "Update mint/burn modals to show correct token identifier",
         "Add tests for the utility function with various token types"
       ],
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "Created getTokenIdentifier utility in client/src/lib/tokenUtils.ts. Logic: returns collection if not 'Token', otherwise returns type. Integrated into tokens.ts and nfts.ts stores to set default name/symbol when metadata is not available. Added comprehensive unit tests. TokenCard and NFTCard display the name from the store, which now uses the correct identifier logic.",
       "testing": {
         "automated": [
           "Unit test: getTokenIdentifier returns collection when not 'Token'",
@@ -98,7 +98,9 @@
           "REQUIRED: Verify tokens with custom collections show collection name",
           "REQUIRED: Verify tokens with 'Token' collection show type name"
         ]
-      }
+      },
+      "manualTestingRequired": true,
+      "manualTestingPrompt": "Please verify that tokens with custom collection names show the collection name, and tokens with 'Token' collection show the type name."
     },
     {
       "category": "nft-collection-flow",
