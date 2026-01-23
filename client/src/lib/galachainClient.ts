@@ -508,19 +508,18 @@ export interface CreateNftCollectionInput {
 }
 
 /**
- * Fetch NFT collection authorizations for a user
+ * Fetch NFT collection authorizations
  * This is a read-only operation that does NOT require wallet signing
- * Returns collections that the user has been authorized to create
+ * Returns all NFT collection authorizations
+ * Note: Client-side filtering by user may be needed
  */
 export async function fetchNftCollectionAuthorizations(
-  authorizedUser: string,
   options?: {
     bookmark?: string
     limit?: number
   }
 ): Promise<FetchNftCollectionAuthorizationsResponse> {
   const dto = {
-    authorizedUser: authorizedUser as UserRef,
     ...(options?.bookmark && { bookmark: options.bookmark }),
     ...(options?.limit && { limit: options.limit }),
   }

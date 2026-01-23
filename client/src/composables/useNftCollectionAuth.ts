@@ -74,8 +74,12 @@ export function useNftCollectionAuth() {
 
       // Paginate through all results
       do {
-        const response = await fetchNftCollectionAuthorizations(walletStore.address, { bookmark, limit: 100 })
-        results.push(...response.results)
+        const response = await fetchNftCollectionAuthorizations({ bookmark, limit: 100 })
+        // Filter to only include authorizations for the current user
+        const userAuths = response.results.filter(auth =>
+          auth.authorizedUsers?.includes(walletStore.address!)
+        )
+        results.push(...userAuths)
         bookmark = response.nextPageBookmark
       } while (bookmark)
 
