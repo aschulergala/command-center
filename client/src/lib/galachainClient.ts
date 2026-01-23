@@ -539,8 +539,6 @@ export async function grantNftCollectionAuthorization(
   collection: string,
   authorizedUser: string
 ): Promise<unknown> {
-  const tokenApi = createTokenApi(client)
-
   const dto = {
     collection,
     authorizedUser: authorizedUser as UserRef,
@@ -549,8 +547,14 @@ export async function grantNftCollectionAuthorization(
 
   logRequest('GrantNftCollectionAuthorization', dto)
 
+  // Use client.submit() directly since this method isn't in TokenApi
   return executeSignedApiCall(
-    () => (tokenApi as unknown as { GrantNftCollectionAuthorization: (dto: unknown) => Promise<{ Data: unknown }> }).GrantNftCollectionAuthorization(dto),
+    () => client.submit({
+      url: getTokenApiUrl(),
+      method: 'GrantNftCollectionAuthorization',
+      payload: dto,
+      sign: true,
+    }),
     'GrantNftCollectionAuthorization'
   )
 }
@@ -565,8 +569,6 @@ export async function createNftCollection(
   client: BrowserConnectClient,
   input: CreateNftCollectionInput
 ): Promise<TokenClass> {
-  const tokenApi = createTokenApi(client)
-
   const dto = {
     collection: input.collection,
     category: input.category,
@@ -590,8 +592,14 @@ export async function createNftCollection(
 
   logRequest('CreateNftCollection', dto)
 
+  // Use client.submit() directly since this method isn't in TokenApi
   return executeSignedApiCall(
-    () => (tokenApi as unknown as { CreateNftCollection: (dto: unknown) => Promise<{ Data: TokenClass }> }).CreateNftCollection(dto),
+    () => client.submit<TokenClass, typeof dto>({
+      url: getTokenApiUrl(),
+      method: 'CreateNftCollection',
+      payload: dto,
+      sign: true,
+    }),
     'CreateNftCollection'
   )
 }

@@ -110,10 +110,9 @@ describe('CreateCollectionModal', () => {
       await flushPromises()
 
       // The helper text exists in the component template
-      // It's shown via v-else when there's no validation error
       // Check that the component contains this text in its rendered HTML
       const html = wrapper.html()
-      expect(html).toContain('unique collection identifier')
+      expect(html).toContain('This will be your unique collection identifier')
     })
 
     it('should have Claim Name button', async () => {
