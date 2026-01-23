@@ -1,0 +1,22 @@
+# Nixpacks configuration for Railway deployment
+
+[variables]
+# Ensure devDependencies are installed for build
+NPM_CONFIG_PRODUCTION = "false"
+NODE_ENV = "development"
+
+[phases.setup]
+nixPkgs = ["nodejs_18"]
+
+[phases.install]
+cmds = [
+    "npm install --include=dev",
+    "cd client && npm install --include=dev"
+]
+
+[phases.build]
+cmds = ["npm run build"]
+
+# Reset NODE_ENV for production runtime
+[start]
+cmd = "NODE_ENV=production npm run start"
