@@ -630,9 +630,10 @@ export async function createNftCollection(
  * Get the current GalaChain environment configuration
  */
 export function getGalaChainConfig() {
+  const networkStore = useNetworkStore()
   return {
-    env: config.galachain.env,
-    gatewayUrl: config.galachain.gatewayUrl,
+    env: networkStore.network,
+    gatewayUrl: networkStore.gatewayUrl,
   }
 }
 
