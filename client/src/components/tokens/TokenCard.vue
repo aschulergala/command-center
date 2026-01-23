@@ -55,32 +55,23 @@ const hasBalanceDifference = computed(() => {
         </div>
       </div>
 
-      <!-- Authority Badges -->
-      <div class="flex gap-1">
-        <span
-          v-if="token.canMint"
-          class="px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-          title="You can mint this token"
-        >
-          Mint
-        </span>
-        <span
-          v-if="token.canBurn"
-          class="px-2 py-0.5 text-xs font-medium rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-          title="You can burn this token"
-        >
-          Burn
-        </span>
-      </div>
+      <!-- Mint Authority Badge (only show mint, not burn) -->
+      <span
+        v-if="token.canMint"
+        class="px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+        title="You have mint authority for this token"
+      >
+        Mint
+      </span>
     </div>
 
     <!-- Balance Section -->
     <div class="mb-4">
       <div class="flex items-baseline justify-between">
-        <span class="text-2xl font-bold text-gray-900 dark:text-white">
-          {{ token.balanceFormatted }}
+        <span class="text-2xl font-bold" style="color: #111827;">
+          {{ token.balanceFormatted || '0' }}
         </span>
-        <span class="text-sm text-gray-500 dark:text-gray-400">
+        <span class="text-sm text-gray-500">
           {{ token.symbol }}
         </span>
       </div>

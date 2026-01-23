@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class', // Use class-based dark mode instead of system preference
   content: [
     "./index.html",
     "./src/**/*.{vue,js,ts,jsx,tsx}",
