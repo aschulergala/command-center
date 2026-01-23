@@ -10,15 +10,16 @@ import { BrowserConnectClient, TokenApi, GalaChainResponseError } from '@gala-ch
 import type { TokenBalance, TokenInstanceKey, TokenClassKey, TokenClass } from '@gala-chain/connect'
 import type { TokenAllowance, FetchAllowancesResponse, UserRef, TokenBalanceWithMetadata, FetchBalancesWithTokenMetadataResponse } from '@gala-chain/api'
 import BigNumber from 'bignumber.js'
-import { config } from './config'
+import { useNetworkStore } from '@/stores/network'
 import { GalaChainError, logError } from './galachainErrors'
 
 /**
- * Get the token API URL based on environment
- * The gateway URL is the complete URL to the token contract
+ * Get the token API URL based on selected network
+ * Reads from the network store for runtime network switching
  */
-function getTokenApiUrl(): string {
-  return config.galachain.gatewayUrl
+export function getTokenApiUrl(): string {
+  const networkStore = useNetworkStore()
+  return networkStore.gatewayUrl
 }
 
 /**

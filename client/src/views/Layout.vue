@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { RouterView } from 'vue-router'
 import AppNavigation from '@/components/AppNavigation.vue'
 import WalletConnect from '@/components/WalletConnect.vue'
+import NetworkToggle from '@/components/NetworkToggle.vue'
 import ToastContainer from '@/components/ui/ToastContainer.vue'
 import TransactionIndicator from '@/components/ui/TransactionIndicator.vue'
 import MobileMenu from '@/components/ui/MobileMenu.vue'
@@ -38,8 +39,9 @@ function closeMobileMenu() {
           <!-- Desktop Navigation -->
           <AppNavigation class="hidden md:flex" />
 
-          <!-- Wallet Connect + Transaction Indicator -->
+          <!-- Network Toggle + Wallet Connect + Transaction Indicator -->
           <div class="flex items-center gap-2">
+            <NetworkToggle />
             <TransactionIndicator />
             <WalletConnect />
             <!-- Mobile Menu Button -->
