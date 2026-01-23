@@ -44,15 +44,10 @@ const hasBalanceDifference = computed(() => {
           <span v-else>{{ token.symbol.slice(0, 2).toUpperCase() }}</span>
         </div>
 
-        <!-- Token Name & Symbol -->
-        <div>
-          <h3 class="font-semibold text-gray-900 dark:text-white">
-            {{ token.name }}
-          </h3>
-          <p class="text-sm text-gray-500 dark:text-gray-400">
-            {{ token.symbol }}
-          </p>
-        </div>
+        <!-- Token Name -->
+        <h3 class="text-lg font-bold" style="color: #111827;">
+          {{ token.name }}
+        </h3>
       </div>
 
       <!-- Mint Authority Badge (only show mint, not burn) -->
@@ -67,14 +62,9 @@ const hasBalanceDifference = computed(() => {
 
     <!-- Balance Section -->
     <div class="mb-4">
-      <div class="flex items-baseline justify-between">
-        <span class="text-2xl font-bold" style="color: #111827;">
-          {{ token.balanceFormatted || '0' }}
-        </span>
-        <span class="text-sm text-gray-500">
-          {{ token.symbol }}
-        </span>
-      </div>
+      <span class="text-2xl font-bold" style="color: #111827;">
+        {{ token.balanceFormatted || '0' }}
+      </span>
 
       <!-- Balance Details -->
       <div
