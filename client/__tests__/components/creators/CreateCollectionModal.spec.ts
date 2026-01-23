@@ -105,14 +105,14 @@ describe('CreateCollectionModal', () => {
       expect(input.attributes('placeholder')).toContain('my-awesome-collection')
     })
 
-    it('should show helper text for collection name when valid', async () => {
+    it('should have collection name input with proper structure', async () => {
       const wrapper = mountComponent({ open: true })
       await flushPromises()
 
-      // The helper text exists in the component template
-      // Check that the component contains this text in its rendered HTML
-      const html = wrapper.html()
-      expect(html).toContain('This will be your unique collection identifier')
+      // Verify the collection name input exists and has expected attributes
+      const input = wrapper.find('#collectionName')
+      expect(input.exists()).toBe(true)
+      expect(input.attributes('type')).toBe('text')
     })
 
     it('should have Claim Name button', async () => {

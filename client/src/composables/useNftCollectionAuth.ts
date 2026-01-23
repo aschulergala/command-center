@@ -61,6 +61,10 @@ export function useNftCollectionAuth() {
    * Returns claimed collection names that can be used to create collections
    */
   async function fetchAuthorizations(): Promise<OperationResult<NftCollectionAuthorization[]>> {
+    if (!walletStore.address) {
+      return { success: false, error: 'Wallet not connected' }
+    }
+
     isLoading.value = true
     error.value = null
 
@@ -70,7 +74,7 @@ export function useNftCollectionAuth() {
 
       // Paginate through all results
       do {
-        const response = await fetchNftCollectionAuthorizations({ bookmark, limit: 100 })
+        const response = await fetchNftCollectionAuthorizations(walletStore.address, { bookmark, limit: 100 })
         results.push(...response.results)
         bookmark = response.nextPageBookmark
       } while (bookmark)
