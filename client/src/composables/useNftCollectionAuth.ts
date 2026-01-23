@@ -61,7 +61,7 @@ export function useNftCollectionAuth() {
    * Returns claimed collection names that can be used to create collections
    */
   async function fetchAuthorizations(): Promise<OperationResult<NftCollectionAuthorization[]>> {
-    if (!walletStore.address) {
+    if (!walletStore.connected || !walletStore.address) {
       return { success: false, error: 'Wallet not connected' }
     }
 
@@ -69,15 +69,21 @@ export function useNftCollectionAuth() {
     error.value = null
 
     try {
+      const client = await walletStore.getClient()
+      if (!client) {
+        return { success: false, error: 'Unable to get wallet client' }
+      }
+
       const results: NftCollectionAuthorization[] = []
       let bookmark: string | undefined
 
       // Paginate through all results
       do {
-        const response = await fetchNftCollectionAuthorizations({ bookmark, limit: 100 })
-        // Filter to only include authorizations for the current user
+        const response = await fetchNftCollectionAuthorizations(client, { bookmark, limit: 100 })
+        // Filter to only include authorizations for the current user (case-insensitive)
+        const userAddressLower = walletStore.address!.toLowerCase()
         const userAuths = response.results.filter(auth =>
-          auth.authorizedUsers?.includes(walletStore.address!)
+          auth.authorizedUsers?.some(user => user.toLowerCase() === userAddressLower)
         )
         results.push(...userAuths)
         bookmark = response.nextPageBookmark

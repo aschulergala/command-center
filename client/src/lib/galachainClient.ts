@@ -110,8 +110,16 @@ async function unsignedPost<T>(method: string, dto: object): Promise<T> {
     })
 
     if (!response.ok) {
+      // Try to read the error response body for more details
+      let errorBody = ''
+      try {
+        errorBody = await response.text()
+        console.error(`[GalaChain:${method}] Error response body:`, errorBody)
+      } catch {
+        // Ignore if we can't read the body
+      }
       throw new GalaChainError(
-        `HTTP error: ${response.status} ${response.statusText}`,
+        `HTTP error: ${response.status} ${response.statusText}${errorBody ? ` - ${errorBody}` : ''}`,
         'NETWORK_ERROR'
       )
     }
@@ -509,11 +517,11 @@ export interface CreateNftCollectionInput {
 
 /**
  * Fetch NFT collection authorizations
- * This is a read-only operation that does NOT require wallet signing
- * Returns all NFT collection authorizations
- * Note: Client-side filtering by user may be needed
+ * This requires wallet signing on some contracts (e.g., testnet)
+ * Returns NFT collection authorizations
  */
 export async function fetchNftCollectionAuthorizations(
+  client: BrowserConnectClient,
   options?: {
     bookmark?: string
     limit?: number
@@ -524,9 +532,17 @@ export async function fetchNftCollectionAuthorizations(
     ...(options?.limit && { limit: options.limit }),
   }
 
-  return unsignedPost<FetchNftCollectionAuthorizationsResponse>(
-    'FetchNftCollectionAuthorizationsWithPagination',
-    dto
+  logRequest('FetchNftCollectionAuthorizationsWithPagination', dto)
+
+  // Use signed request since some contracts require authentication
+  return executeSignedApiCall(
+    () => client.submit<FetchNftCollectionAuthorizationsResponse, typeof dto>({
+      url: getTokenApiUrl(),
+      method: 'FetchNftCollectionAuthorizationsWithPagination',
+      payload: dto,
+      sign: true,
+    }),
+    'FetchNftCollectionAuthorizationsWithPagination'
   )
 }
 
