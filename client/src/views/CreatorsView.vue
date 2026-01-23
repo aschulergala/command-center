@@ -14,9 +14,17 @@ import CreateClassModal from '@/components/creators/CreateClassModal.vue'
 import CollectionMintModal from '@/components/creators/CollectionMintModal.vue'
 import { useWallet } from '@/composables/useWallet'
 import { useCreatorCollections } from '@/composables/useCreatorCollections'
+import { useNftCollectionAuth } from '@/composables/useNftCollectionAuth'
 import type { CreatorCollectionDisplay, CreatorClassDisplay } from '@/stores/creatorCollections'
 
 const { connected } = useWallet()
+
+// NFT Collection Authorizations (claimed collection names)
+const {
+  pendingCollections,
+  isLoading: isLoadingAuthorizations,
+  fetchAuthorizations,
+} = useNftCollectionAuth()
 const {
   collections,
   isLoading,
@@ -38,11 +46,15 @@ const showMintModal = ref(false)
 const selectedCollectionForClass = ref<CreatorCollectionDisplay | null>(null)
 const selectedCollectionForMint = ref<CreatorCollectionDisplay | null>(null)
 const selectedClassForMint = ref<CreatorClassDisplay | null>(null)
+const preselectedCollectionName = ref<string | null>(null)
 
 // Fetch collections on mount if connected
 onMounted(async () => {
   if (connected.value) {
-    await fetchCollections()
+    await Promise.all([
+      fetchCollections(),
+      fetchAuthorizations(),
+    ])
     hasFetched.value = true
   }
 })
@@ -57,7 +69,8 @@ async function handleRefresh() {
 /**
  * Open create collection modal
  */
-function openCreateCollectionModal() {
+function openCreateCollectionModal(collectionName?: string) {
+  preselectedCollectionName.value = collectionName || null
   showCreateCollectionModal.value = true
 }
 
@@ -66,6 +79,7 @@ function openCreateCollectionModal() {
  */
 function closeCreateCollectionModal() {
   showCreateCollectionModal.value = false
+  preselectedCollectionName.value = null
 }
 
 /**
@@ -276,13 +290,15 @@ function handleToggleExpand(collectionKey: string) {
             </div>
           </div>
 
-          <!-- Collections List -->
+          <!-- Collections List (includes pending collections) -->
           <CollectionList
             :collections="collections"
+            :pending-collections="pendingCollections"
             :is-loading="isLoading"
             @mint="handleMint"
             @manage-classes="handleManageClasses"
             @toggle-expand="handleToggleExpand"
+            @complete-pending="openCreateCollectionModal"
           />
         </div>
       </section>
@@ -290,6 +306,7 @@ function handleToggleExpand(collectionKey: string) {
       <!-- Create Collection Modal -->
       <CreateCollectionModal
         :open="showCreateCollectionModal"
+        :preselected-collection="preselectedCollectionName"
         @close="closeCreateCollectionModal"
         @success="handleCollectionCreated"
       />

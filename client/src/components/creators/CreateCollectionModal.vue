@@ -8,6 +8,7 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 
 interface Props {
   open: boolean
+  preselectedCollection?: string | null
 }
 
 const props = defineProps<Props>()
@@ -156,6 +157,11 @@ function showDialog() {
   if (dialogRef.value) {
     dialogRef.value.showModal()
     resetAllState()
+    // If a collection name is preselected, skip to step 2
+    if (props.preselectedCollection) {
+      claimedCollectionName.value = props.preselectedCollection
+      flowStep.value = 'create'
+    }
   }
 }
 
@@ -300,7 +306,7 @@ onUnmounted(() => {
         <div>
           <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
             {{ flowStep === 'claim' ? 'Claim Collection Name' :
-               flowStep === 'create' ? 'Create NFT Collection' :
+               flowStep === 'create' ? 'Create new NFT' :
                'Confirm Collection' }}
           </h2>
           <!-- Step indicator -->

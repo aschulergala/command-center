@@ -35,15 +35,15 @@ export interface OperationResult<T> {
   error?: string
 }
 
+// Shared state across all composable instances (singleton pattern)
+const isLoading = ref(false)
+const isClaiming = ref(false)
+const isCreating = ref(false)
+const error = ref<string | null>(null)
+const claimedCollections = ref<ClaimedCollection[]>([])
+
 export function useNftCollectionAuth() {
   const walletStore = useWalletStore()
-
-  // State
-  const isLoading = ref(false)
-  const isClaiming = ref(false)
-  const isCreating = ref(false)
-  const error = ref<string | null>(null)
-  const claimedCollections = ref<ClaimedCollection[]>([])
 
   // Computed
   const isConnected = computed(() => walletStore.connected)
@@ -78,13 +78,16 @@ export function useNftCollectionAuth() {
       let bookmark: string | undefined
 
       // Paginate through all results
+      const userAddressLower = walletStore.address!.toLowerCase()
+
       do {
         const response = await fetchNftCollectionAuthorizations(client, { bookmark, limit: 100 })
+
         // Filter to only include authorizations for the current user (case-insensitive)
-        const userAddressLower = walletStore.address!.toLowerCase()
         const userAuths = response.results.filter(auth =>
           auth.authorizedUsers?.some(user => user.toLowerCase() === userAddressLower)
         )
+
         results.push(...userAuths)
         bookmark = response.nextPageBookmark
       } while (bookmark)
