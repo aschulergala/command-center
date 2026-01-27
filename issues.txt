@@ -1,14 +1,16 @@
-Confusing and incorrect gateway URLs
-    # GalaChain Gateway URL (for chaincode operations) 
-    # Production: https://gateway-mainnet.galachain.com/api/asset/token-contract
-    # Stage: https://gateway-testnet.galachain.com/api/testnet01/gc-a9b8b472b035c0510508c248d1110d3162b7e5f4-GalaChainToken
-    GALACHAIN_GATEWAY_URL=https://gateway-testnet.galachain.com/api/testnet01/gc-a9b8b472b035c0510508c248d1110d3162b7e5f4-GalaChainToken
+allowances should include those granted to the user and by the user (requirements fail, not possible to get the granted by without a granted to)
 
-# GalaChain API URL (for REST API calls)
-# Production: https://api.galachain.com
-# Stage: https://api-stage.galachain.com
-GALACHAIN_API_URL=https://api-stage.galachain.com
+balances don't show the quantity or the token image, etc. Use FetchBalancesWithMetadata endpoint rather than FetchBalances endpoint.
 
-Prompting for signatures very often (and on read ops)
+tokens should be identified by their collection field if it is not "Token". Otherwise use the type field
 
-Incorrect URL for Pump, should be https://pump.gala.com/
+Attempts to use the original CreateTokenClass flow rather than the new NFTCollection flow
+    /api/asset/token-contract/GrantNftCollectionAuthorization - user claims a collection name
+    /api/asset/token-contract/CreateNftCollection - user creates an NFT token class based on a claimed collection name
+    /api/asset/token-contract/FetchNftCollectionAuthorizationsWithPagination - get the user's claimed collections
+
+Also in the creators area, FTs can't be created here so don't show that option. The launchpad is where users will go fo FT creation.
+
+When choosing to transfer a token, balance is shown but looks to be divided by 100M (10^8) (so it's handling decimals improperly). The quantity value of a balance is the actual value of tokens.
+
+Owned tokens should have an option to burn as well as the already built transfer

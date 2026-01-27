@@ -48,7 +48,7 @@ When implementing GalaChain-related code, use these tools to:
 
 ## Steps
 
-1. Read IMPLEMENTATION_PLAN.json and find the highest priority task that is NOT passed. You should decide which task to implement based on the priority and the progress of the other tasks, not just the first one that is not passed.
+1. Read ISSUES_FIX_PLAN.json and find the highest priority task that is NOT passed. You should decide which task to implement based on the priority and the progress of the other tasks, not just the first one that is not passed.
 2. Read progress.txt - check the Learnings section first for patterns from previous iterations.
 3. If the task involves GalaChain SDK usage, use `/galachain:ask` to get correct patterns before coding.
 4. Implement that ONE task only.
@@ -57,7 +57,7 @@ When implementing GalaChain-related code, use these tools to:
 ## Critical: Only Complete If Automated Tests Pass
 
 - If automated tests PASS:
-  - Update IMPLEMENTATION_PLAN.json to mark the task passed
+  - Update ISSUES_FIX_PLAN.json to mark the task passed
   - If there are manual tests required, add a note to manualTestingRequired.txt
   - Commit your changes with message: feat: [task description]. Do not attribute the commit to claude code.
   - Append what worked to progress.txt

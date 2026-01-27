@@ -518,11 +518,10 @@ export interface CreateNftCollectionInput {
 
 /**
  * Fetch NFT collection authorizations
- * This requires wallet signing on some contracts (e.g., testnet)
+ * This is a read-only operation that does NOT require wallet signing
  * Returns NFT collection authorizations
  */
 export async function fetchNftCollectionAuthorizations(
-  client: BrowserConnectClient,
   options?: {
     bookmark?: string
     limit?: number
@@ -533,17 +532,9 @@ export async function fetchNftCollectionAuthorizations(
     ...(options?.limit && { limit: options.limit }),
   }
 
-  logRequest('FetchNftCollectionAuthorizationsWithPagination', dto)
-
-  // Use signed request since some contracts require authentication
-  return executeSignedApiCall(
-    () => client.submit<FetchNftCollectionAuthorizationsResponse, typeof dto>({
-      url: getTokenApiUrl(),
-      method: 'FetchNftCollectionAuthorizationsWithPagination',
-      payload: dto,
-      sign: true,
-    }),
-    'FetchNftCollectionAuthorizationsWithPagination'
+  return unsignedPost<FetchNftCollectionAuthorizationsResponse>(
+    'FetchNftCollectionAuthorizationsWithPagination',
+    dto
   )
 }
 
