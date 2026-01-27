@@ -69,11 +69,6 @@ export function useNftCollectionAuth() {
     error.value = null
 
     try {
-      const client = await walletStore.getClient()
-      if (!client) {
-        return { success: false, error: 'Unable to get wallet client' }
-      }
-
       const results: NftCollectionAuthorization[] = []
       let bookmark: string | undefined
 
@@ -81,7 +76,7 @@ export function useNftCollectionAuth() {
       const userAddressLower = walletStore.address!.toLowerCase()
 
       do {
-        const response = await fetchNftCollectionAuthorizations(client, { bookmark, limit: 100 })
+        const response = await fetchNftCollectionAuthorizations({ bookmark, limit: 100 })
 
         // Filter to only include authorizations for the current user (case-insensitive)
         const userAuths = response.results.filter(auth =>
