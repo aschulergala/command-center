@@ -8,9 +8,12 @@ import type { GalaEnvironment } from '@/lib/config';
 
 export const useSdkStore = defineStore('sdk', () => {
   const sdk = shallowRef<LaunchpadSDK | null>(null);
-  const env = ref<GalaEnvironment>(
-    (localStorage.getItem(ENV_STORAGE_KEY) as GalaEnvironment) ?? DEFAULT_ENV,
-  );
+  const stored = localStorage.getItem(ENV_STORAGE_KEY);
+  const validEnvs: GalaEnvironment[] = ['PROD', 'STAGE'];
+  const initialEnv: GalaEnvironment = stored && validEnvs.includes(stored as GalaEnvironment)
+    ? (stored as GalaEnvironment)
+    : DEFAULT_ENV;
+  const env = ref<GalaEnvironment>(initialEnv);
   const isInitialized = ref(false);
 
   function initialize(walletProvider?: WalletProvider) {

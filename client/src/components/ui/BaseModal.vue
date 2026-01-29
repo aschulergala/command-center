@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, onBeforeUnmount } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 
 const props = defineProps<{
   open: boolean;
@@ -15,12 +15,6 @@ const dialogRef = ref<HTMLDialogElement | null>(null);
 
 function handleBackdropClick(e: MouseEvent) {
   if (e.target === dialogRef.value) {
-    emit('close');
-  }
-}
-
-function handleKeydown(e: KeyboardEvent) {
-  if (e.key === 'Escape') {
     emit('close');
   }
 }
@@ -41,11 +35,6 @@ onMounted(() => {
   if (props.open && dialogRef.value) {
     dialogRef.value.showModal();
   }
-  document.addEventListener('keydown', handleKeydown);
-});
-
-onBeforeUnmount(() => {
-  document.removeEventListener('keydown', handleKeydown);
 });
 
 const sizeClasses = {
@@ -60,6 +49,7 @@ const sizeClasses = {
     ref="dialogRef"
     class="fixed inset-0 z-50 m-0 h-full w-full max-w-none border-none bg-transparent p-0 backdrop:bg-black/60 md:flex md:items-center md:justify-center"
     @click="handleBackdropClick"
+    @cancel.prevent="emit('close')"
   >
     <div
       class="flex h-full flex-col bg-surface-900 md:h-auto md:rounded-xl md:border md:border-surface-700"
@@ -71,6 +61,7 @@ const sizeClasses = {
           <h2 class="text-lg font-semibold text-white">{{ title }}</h2>
         </slot>
         <button
+          aria-label="Close"
           class="rounded-lg p-1.5 text-surface-400 hover:bg-surface-800 hover:text-white"
           @click="emit('close')"
         >

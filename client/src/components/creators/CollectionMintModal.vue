@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue';
+import { ref, watch, computed, onBeforeUnmount } from 'vue';
 import type { NftTokenClassWithSupply } from '@/stores/creators';
 import { useWalletStore } from '@/stores/wallet';
 import BaseModal from '@/components/ui/BaseModal.vue';
@@ -48,6 +48,10 @@ function resetForm() {
     debounceTimer = null;
   }
 }
+
+onBeforeUnmount(() => {
+  if (debounceTimer) clearTimeout(debounceTimer);
+});
 
 // Reset form when modal opens/closes
 watch(

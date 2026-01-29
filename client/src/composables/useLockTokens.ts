@@ -15,6 +15,7 @@ export function useLockTokens(tokenId: string, displayName: string) {
   const toast = useToast();
 
   async function lock(amount: string) {
+    if (isLocking.value) return;
     const sdk = sdkStore.requireSdk();
     isLocking.value = true;
 
@@ -29,7 +30,8 @@ export function useLockTokens(tokenId: string, displayName: string) {
       transactions.markComplete(txId);
       toast.update(toastId, 'success', `Successfully locked ${amount} ${displayName}.`);
 
-      await tokenStore.fetchBalances();
+      // Refresh balances in background - don't let failure affect the tx status
+      tokenStore.fetchBalances().catch(() => {});
     } catch (err) {
       transactions.markFailed(txId, err);
       toast.update(toastId, 'error', parseError(err));
@@ -40,6 +42,7 @@ export function useLockTokens(tokenId: string, displayName: string) {
   }
 
   async function unlock(amount: string) {
+    if (isUnlocking.value) return;
     const sdk = sdkStore.requireSdk();
     isUnlocking.value = true;
 
@@ -54,7 +57,8 @@ export function useLockTokens(tokenId: string, displayName: string) {
       transactions.markComplete(txId);
       toast.update(toastId, 'success', `Successfully unlocked ${amount} ${displayName}.`);
 
-      await tokenStore.fetchBalances();
+      // Refresh balances in background - don't let failure affect the tx status
+      tokenStore.fetchBalances().catch(() => {});
     } catch (err) {
       transactions.markFailed(txId, err);
       toast.update(toastId, 'error', parseError(err));

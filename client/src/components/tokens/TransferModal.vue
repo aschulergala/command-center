@@ -61,17 +61,16 @@ async function handleSubmit() {
     return;
   }
 
-  const { transfer, isTransferring } = useTransferToken(tokenId.value, displayName.value);
-
+  submitting.value = true;
+  const { transfer } = useTransferToken(tokenId.value, displayName.value);
   try {
     await transfer(recipient.value, amount.value);
     emit('close');
   } catch {
     // Error is already handled by the composable via toast
+  } finally {
+    submitting.value = false;
   }
-
-  // Expose isTransferring for the template reactivity (re-assigned below)
-  submitting.value = isTransferring.value;
 }
 
 const submitting = ref(false);

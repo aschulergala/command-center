@@ -14,6 +14,7 @@ export function useBurnTokens(tokenId: string, displayName: string) {
   const toast = useToast();
 
   async function burn(amount: string) {
+    if (isBurning.value) return;
     const sdk = sdkStore.requireSdk();
     isBurning.value = true;
 
@@ -28,8 +29,8 @@ export function useBurnTokens(tokenId: string, displayName: string) {
       transactions.markComplete(txId);
       toast.update(toastId, 'success', `Successfully burned ${amount} ${displayName}.`);
 
-      // Refresh balances after successful burn
-      await tokenStore.fetchBalances();
+      // Refresh balances in background - don't let failure affect the tx status
+      tokenStore.fetchBalances().catch(() => {});
     } catch (err) {
       transactions.markFailed(txId, err);
       toast.update(toastId, 'error', parseError(err));

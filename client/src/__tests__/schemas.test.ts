@@ -16,30 +16,40 @@ function getErrors(result: { success: boolean; error?: { issues: { message: stri
   return result.error!.issues.map((i) => i.message);
 }
 
+// Valid test addresses (40 hex chars after prefix)
+const VALID_0X = '0x1234567890abcdef1234567890abcdef12345678';
+const VALID_ETH = 'eth|1234567890abcdef1234567890abcdef12345678';
+
 // ===========================================================================
 // transferSchema
 // ===========================================================================
 describe('transferSchema', () => {
   it('accepts valid input with 0x address', () => {
-    const result = transferSchema.safeParse({ recipient: '0xabc123', amount: '10' });
+    const result = transferSchema.safeParse({ recipient: VALID_0X, amount: '10' });
     expect(result.success).toBe(true);
   });
 
   it('accepts valid input with eth| address', () => {
-    const result = transferSchema.safeParse({ recipient: 'eth|abc123', amount: '0.5' });
+    const result = transferSchema.safeParse({ recipient: VALID_ETH, amount: '0.5' });
     expect(result.success).toBe(true);
   });
 
   it('rejects empty recipient', () => {
     const result = transferSchema.safeParse({ recipient: '', amount: '10' });
     expect(result.success).toBe(false);
-    expect(getErrors(result)).toContain('Recipient address is required');
+    expect(getErrors(result)).toContain('Address is required');
   });
 
   it('rejects recipient without valid prefix', () => {
     const result = transferSchema.safeParse({ recipient: 'abc123', amount: '10' });
     expect(result.success).toBe(false);
-    expect(getErrors(result)).toContain('Must be a valid Ethereum or GalaChain address');
+    expect(getErrors(result)).toContain('Must be a valid Ethereum (0x...) or GalaChain (eth|...) address');
+  });
+
+  it('rejects 0x address with wrong length', () => {
+    const result = transferSchema.safeParse({ recipient: '0xabc123', amount: '10' });
+    expect(result.success).toBe(false);
+    expect(getErrors(result)).toContain('Must be a valid Ethereum (0x...) or GalaChain (eth|...) address');
   });
 
   it('rejects missing recipient field entirely', () => {
@@ -48,31 +58,31 @@ describe('transferSchema', () => {
   });
 
   it('rejects empty amount', () => {
-    const result = transferSchema.safeParse({ recipient: '0xabc', amount: '' });
+    const result = transferSchema.safeParse({ recipient: VALID_0X, amount: '' });
     expect(result.success).toBe(false);
     expect(getErrors(result)).toContain('Amount is required');
   });
 
   it('rejects non-numeric amount', () => {
-    const result = transferSchema.safeParse({ recipient: '0xabc', amount: 'notanumber' });
+    const result = transferSchema.safeParse({ recipient: VALID_0X, amount: 'notanumber' });
     expect(result.success).toBe(false);
     expect(getErrors(result)).toContain('Must be a positive number');
   });
 
   it('rejects zero amount', () => {
-    const result = transferSchema.safeParse({ recipient: '0xabc', amount: '0' });
+    const result = transferSchema.safeParse({ recipient: VALID_0X, amount: '0' });
     expect(result.success).toBe(false);
     expect(getErrors(result)).toContain('Must be a positive number');
   });
 
   it('rejects negative amount', () => {
-    const result = transferSchema.safeParse({ recipient: '0xabc', amount: '-5' });
+    const result = transferSchema.safeParse({ recipient: VALID_0X, amount: '-5' });
     expect(result.success).toBe(false);
     expect(getErrors(result)).toContain('Must be a positive number');
   });
 
   it('rejects missing amount field entirely', () => {
-    const result = transferSchema.safeParse({ recipient: '0xabc' });
+    const result = transferSchema.safeParse({ recipient: VALID_0X });
     expect(result.success).toBe(false);
   });
 
@@ -82,7 +92,7 @@ describe('transferSchema', () => {
   });
 
   it('accepts large decimal amounts', () => {
-    const result = transferSchema.safeParse({ recipient: '0xabc', amount: '999999999.123456789' });
+    const result = transferSchema.safeParse({ recipient: VALID_0X, amount: '999999999.123456789' });
     expect(result.success).toBe(true);
   });
 });
@@ -198,35 +208,41 @@ describe('lockSchema', () => {
 // ===========================================================================
 describe('nftTransferSchema', () => {
   it('accepts valid input with 0x address', () => {
-    const result = nftTransferSchema.safeParse({ recipient: '0xdef456', instanceId: 'nft-1' });
+    const result = nftTransferSchema.safeParse({ recipient: VALID_0X, instanceId: 'nft-1' });
     expect(result.success).toBe(true);
   });
 
   it('accepts valid input with eth| address', () => {
-    const result = nftTransferSchema.safeParse({ recipient: 'eth|def456', instanceId: 'nft-1' });
+    const result = nftTransferSchema.safeParse({ recipient: VALID_ETH, instanceId: 'nft-1' });
     expect(result.success).toBe(true);
   });
 
   it('rejects empty recipient', () => {
     const result = nftTransferSchema.safeParse({ recipient: '', instanceId: 'nft-1' });
     expect(result.success).toBe(false);
-    expect(getErrors(result)).toContain('Recipient address is required');
+    expect(getErrors(result)).toContain('Address is required');
   });
 
   it('rejects recipient with invalid prefix', () => {
     const result = nftTransferSchema.safeParse({ recipient: 'invalid-addr', instanceId: 'nft-1' });
     expect(result.success).toBe(false);
-    expect(getErrors(result)).toContain('Must be a valid Ethereum or GalaChain address');
+    expect(getErrors(result)).toContain('Must be a valid Ethereum (0x...) or GalaChain (eth|...) address');
+  });
+
+  it('rejects 0x address with wrong length', () => {
+    const result = nftTransferSchema.safeParse({ recipient: '0xabc', instanceId: 'nft-1' });
+    expect(result.success).toBe(false);
+    expect(getErrors(result)).toContain('Must be a valid Ethereum (0x...) or GalaChain (eth|...) address');
   });
 
   it('rejects empty instanceId', () => {
-    const result = nftTransferSchema.safeParse({ recipient: '0xabc', instanceId: '' });
+    const result = nftTransferSchema.safeParse({ recipient: VALID_0X, instanceId: '' });
     expect(result.success).toBe(false);
     expect(getErrors(result)).toContain('Instance ID is required');
   });
 
   it('rejects missing instanceId field', () => {
-    const result = nftTransferSchema.safeParse({ recipient: '0xabc' });
+    const result = nftTransferSchema.safeParse({ recipient: VALID_0X });
     expect(result.success).toBe(false);
   });
 
@@ -241,7 +257,7 @@ describe('nftTransferSchema', () => {
   });
 
   it('accepts any non-empty string as instanceId', () => {
-    const result = nftTransferSchema.safeParse({ recipient: '0xabc', instanceId: '12345' });
+    const result = nftTransferSchema.safeParse({ recipient: VALID_0X, instanceId: '12345' });
     expect(result.success).toBe(true);
   });
 });
@@ -255,11 +271,16 @@ describe('nftMintSchema', () => {
     type: 'Art',
     category: 'Digital',
     quantity: '5',
-    ownerAddress: 'client|abcdef',
+    ownerAddress: VALID_ETH,
   };
 
   it('accepts valid input', () => {
     const result = nftMintSchema.safeParse(validInput);
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts valid input with 0x ownerAddress', () => {
+    const result = nftMintSchema.safeParse({ ...validInput, ownerAddress: VALID_0X });
     expect(result.success).toBe(true);
   });
 
@@ -319,7 +340,13 @@ describe('nftMintSchema', () => {
   it('rejects empty ownerAddress', () => {
     const result = nftMintSchema.safeParse({ ...validInput, ownerAddress: '' });
     expect(result.success).toBe(false);
-    expect(getErrors(result)).toContain('Owner address is required');
+    expect(getErrors(result)).toContain('Address is required');
+  });
+
+  it('rejects ownerAddress with invalid prefix', () => {
+    const result = nftMintSchema.safeParse({ ...validInput, ownerAddress: 'client|abcdef' });
+    expect(result.success).toBe(false);
+    expect(getErrors(result)).toContain('Must be a valid Ethereum (0x...) or GalaChain (eth|...) address');
   });
 
   it('rejects empty object', () => {
@@ -518,54 +545,60 @@ describe('tokenClassSchema', () => {
 // ===========================================================================
 describe('collectionMintSchema', () => {
   it('accepts valid input with 0x address', () => {
-    const result = collectionMintSchema.safeParse({ quantity: '10', ownerAddress: '0xabc123' });
+    const result = collectionMintSchema.safeParse({ quantity: '10', ownerAddress: VALID_0X });
     expect(result.success).toBe(true);
   });
 
   it('accepts valid input with eth| address', () => {
-    const result = collectionMintSchema.safeParse({ quantity: '1', ownerAddress: 'eth|abc123' });
+    const result = collectionMintSchema.safeParse({ quantity: '1', ownerAddress: VALID_ETH });
     expect(result.success).toBe(true);
   });
 
   it('rejects empty quantity', () => {
-    const result = collectionMintSchema.safeParse({ quantity: '', ownerAddress: '0xabc' });
+    const result = collectionMintSchema.safeParse({ quantity: '', ownerAddress: VALID_0X });
     expect(result.success).toBe(false);
-    expect(getErrors(result)).toContain('Quantity is required');
+    expect(getErrors(result)).toContain('Amount is required');
   });
 
   it('rejects non-numeric quantity', () => {
-    const result = collectionMintSchema.safeParse({ quantity: 'abc', ownerAddress: '0xabc' });
+    const result = collectionMintSchema.safeParse({ quantity: 'abc', ownerAddress: VALID_0X });
     expect(result.success).toBe(false);
     expect(getErrors(result)).toContain('Must be a positive number');
   });
 
   it('rejects zero quantity', () => {
-    const result = collectionMintSchema.safeParse({ quantity: '0', ownerAddress: '0xabc' });
+    const result = collectionMintSchema.safeParse({ quantity: '0', ownerAddress: VALID_0X });
     expect(result.success).toBe(false);
     expect(getErrors(result)).toContain('Must be a positive number');
   });
 
   it('rejects negative quantity', () => {
-    const result = collectionMintSchema.safeParse({ quantity: '-5', ownerAddress: '0xabc' });
+    const result = collectionMintSchema.safeParse({ quantity: '-5', ownerAddress: VALID_0X });
     expect(result.success).toBe(false);
     expect(getErrors(result)).toContain('Must be a positive number');
   });
 
   it('accepts decimal quantity (schema does not enforce integer)', () => {
-    const result = collectionMintSchema.safeParse({ quantity: '2.5', ownerAddress: '0xabc' });
+    const result = collectionMintSchema.safeParse({ quantity: '2.5', ownerAddress: VALID_0X });
     expect(result.success).toBe(true);
   });
 
   it('rejects empty ownerAddress', () => {
     const result = collectionMintSchema.safeParse({ quantity: '10', ownerAddress: '' });
     expect(result.success).toBe(false);
-    expect(getErrors(result)).toContain('Owner address is required');
+    expect(getErrors(result)).toContain('Address is required');
   });
 
   it('rejects ownerAddress with invalid prefix', () => {
     const result = collectionMintSchema.safeParse({ quantity: '10', ownerAddress: 'invalid-addr' });
     expect(result.success).toBe(false);
-    expect(getErrors(result)).toContain('Must be a valid Ethereum or GalaChain address');
+    expect(getErrors(result)).toContain('Must be a valid Ethereum (0x...) or GalaChain (eth|...) address');
+  });
+
+  it('rejects ownerAddress with wrong length', () => {
+    const result = collectionMintSchema.safeParse({ quantity: '10', ownerAddress: '0xabc' });
+    expect(result.success).toBe(false);
+    expect(getErrors(result)).toContain('Must be a valid Ethereum (0x...) or GalaChain (eth|...) address');
   });
 
   it('rejects missing both fields', () => {
@@ -579,7 +612,7 @@ describe('collectionMintSchema', () => {
   });
 
   it('rejects missing quantity field', () => {
-    const result = collectionMintSchema.safeParse({ ownerAddress: '0xabc' });
+    const result = collectionMintSchema.safeParse({ ownerAddress: VALID_0X });
     expect(result.success).toBe(false);
   });
 });

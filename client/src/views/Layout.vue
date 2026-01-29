@@ -26,6 +26,8 @@ function isActive(path: string) {
         <!-- Logo + mobile menu button -->
         <div class="flex items-center gap-3">
           <button
+            aria-label="Toggle navigation menu"
+            :aria-expanded="mobileMenuOpen"
             class="rounded-lg p-2 text-surface-400 hover:bg-surface-800 hover:text-white md:hidden"
             @click="mobileMenuOpen = !mobileMenuOpen"
           >

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, onBeforeUnmount } from 'vue';
 import BaseModal from '@/components/ui/BaseModal.vue';
 import { useClaimCollection } from '@/composables/useClaimCollection';
 import { collectionSchema } from '@/lib/schemas/collection.schema';
@@ -30,6 +30,10 @@ function resetForm() {
     debounceTimer = null;
   }
 }
+
+onBeforeUnmount(() => {
+  if (debounceTimer) clearTimeout(debounceTimer);
+});
 
 // Reset form when modal opens/closes
 watch(

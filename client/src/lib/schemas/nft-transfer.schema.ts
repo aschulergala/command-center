@@ -1,13 +1,8 @@
 import { z } from 'zod';
+import { addressSchema } from './shared';
 
 export const nftTransferSchema = z.object({
-  recipient: z
-    .string()
-    .min(1, 'Recipient address is required')
-    .refine(
-      (val) => val.startsWith('0x') || val.startsWith('eth|'),
-      'Must be a valid Ethereum or GalaChain address',
-    ),
+  recipient: addressSchema,
   instanceId: z
     .string()
     .min(1, 'Instance ID is required'),

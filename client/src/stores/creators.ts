@@ -75,7 +75,9 @@ export const useCreatorStore = defineStore('creators', () => {
 
   function selectCollection(auth: NftCollectionAuthorization) {
     selectedCollection.value = auth;
-    fetchTokenClasses(auth.collection);
+    fetchTokenClasses(auth.collection).catch(() => {
+      // Error already handled in fetchTokenClasses via error ref
+    });
   }
 
   function reset() {

@@ -33,6 +33,7 @@ const colorMap = {
     </svg>
     <p class="flex-1 text-sm text-surface-200">{{ toast.message }}</p>
     <button
+      aria-label="Dismiss notification"
       class="flex-shrink-0 text-surface-500 hover:text-surface-300"
       @click="emit('dismiss')"
     >

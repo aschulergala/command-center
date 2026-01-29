@@ -4,11 +4,8 @@ import { useTransactionStore } from '@/stores/transactions';
 import { useNftStore } from '@/stores/nfts';
 import { useToast } from '@/composables/useToast';
 import { parseError } from '@/lib/errors';
+import { buildTokenName } from '@/lib/nft-utils';
 import type { NftBalance } from '@/stores/nfts';
-
-function buildTokenName(nft: NftBalance): string {
-  return `${nft.collection}|${nft.category}|${nft.type}|${nft.additionalKey}`;
-}
 
 export function useTransferNFT(nft: NftBalance) {
   const isTransferring = ref(false);
@@ -21,6 +18,7 @@ export function useTransferNFT(nft: NftBalance) {
   const displayName = `${nft.collection} ${nft.type}`;
 
   async function transfer(recipient: string, instanceId: string) {
+    if (isTransferring.value) return;
     const sdk = sdkStore.requireSdk();
     isTransferring.value = true;
 
@@ -37,8 +35,8 @@ export function useTransferNFT(nft: NftBalance) {
       transactions.markComplete(txId, txHash);
       toast.update(toastId, 'success', `Successfully transferred ${displayName} #${instanceId}.`);
 
-      // Refresh NFT balances after successful transfer
-      await nftStore.fetchBalances();
+      // Refresh NFT balances in background - don't let failure affect the tx status
+      nftStore.fetchBalances().catch(() => {});
     } catch (err) {
       transactions.markFailed(txId, err);
       toast.update(toastId, 'error', parseError(err));

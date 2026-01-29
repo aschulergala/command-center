@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
+import { ref } from 'vue';
 import { useNftStore, type NftBalance } from '@/stores/nfts';
-import { useWalletStore } from '@/stores/wallet';
+import { useWalletEffect } from '@/composables/useWalletEffect';
 import PageHeader from '@/components/ui/PageHeader.vue';
 import ErrorDisplay from '@/components/ui/ErrorDisplay.vue';
 import CollectionFilter from '@/components/nfts/CollectionFilter.vue';
@@ -10,7 +10,11 @@ import TransferNFTModal from '@/components/nfts/TransferNFTModal.vue';
 import BurnNFTModal from '@/components/nfts/BurnNFTModal.vue';
 
 const nftStore = useNftStore();
-const walletStore = useWalletStore();
+
+useWalletEffect(
+  () => nftStore.fetchBalances(),
+  () => nftStore.reset(),
+);
 
 // Modal state
 type ModalType = 'transfer' | 'burn' | null;
@@ -27,20 +31,6 @@ function closeModal() {
   selectedNft.value = null;
 }
 
-// Fetch balances when wallet connects
-onMounted(() => {
-  if (walletStore.isConnected) {
-    nftStore.fetchBalances();
-  }
-});
-
-watch(() => walletStore.isConnected, (connected) => {
-  if (connected) {
-    nftStore.fetchBalances();
-  } else {
-    nftStore.reset();
-  }
-});
 </script>
 
 <template>

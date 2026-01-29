@@ -4,31 +4,9 @@ import { useTransactionStore } from '@/stores/transactions';
 import { useNftStore } from '@/stores/nfts';
 import { useToast } from '@/composables/useToast';
 import { parseError } from '@/lib/errors';
+import type { MintNftParams, MintNftResult, EstimateMintFeeParams } from '@/types/mint';
 
-export interface MintNftParams {
-  collection: string;
-  type: string;
-  category: string;
-  quantity: string;
-  ownerAddress: string;
-  additionalKey?: string;
-}
-
-export interface MintNftResult {
-  transactionId: string;
-  mintedQuantity: string;
-  owner: string;
-  tokenInstances: number[];
-  tokenClass: { collection: string; type: string; category: string };
-}
-
-export interface EstimateMintFeeParams {
-  collection: string;
-  type: string;
-  category: string;
-  quantity: string;
-  ownerAddress: string;
-}
+export type { MintNftParams, MintNftResult, EstimateMintFeeParams };
 
 export function useMintNFT() {
   const isMinting = ref(false);
@@ -52,6 +30,7 @@ export function useMintNFT() {
   }
 
   async function mint(params: MintNftParams): Promise<MintNftResult | undefined> {
+    if (isMinting.value) return;
     const sdk = sdkStore.requireSdk();
     isMinting.value = true;
 
@@ -69,8 +48,8 @@ export function useMintNFT() {
         `Successfully minted ${result.mintedQuantity}x ${displayName}.`,
       );
 
-      // Refresh NFT balances after successful mint
-      await nftStore.fetchBalances();
+      // Refresh NFT balances in background - don't let failure affect the tx status
+      nftStore.fetchBalances().catch(() => {});
 
       return result;
     } catch (err) {

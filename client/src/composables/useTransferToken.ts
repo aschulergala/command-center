@@ -4,8 +4,7 @@ import { useTransactionStore } from '@/stores/transactions';
 import { useTokenStore } from '@/stores/tokens';
 import { useToast } from '@/composables/useToast';
 import { parseError } from '@/lib/errors';
-
-const GALA_TOKEN_ID = 'GALA|Unit|none|none';
+import { GALA_TOKEN_ID } from '@/lib/constants';
 
 export function useTransferToken(tokenId: string, displayName: string) {
   const isTransferring = ref(false);
@@ -16,6 +15,7 @@ export function useTransferToken(tokenId: string, displayName: string) {
   const toast = useToast();
 
   async function transfer(recipient: string, amount: string) {
+    if (isTransferring.value) return;
     const sdk = sdkStore.requireSdk();
     isTransferring.value = true;
 
@@ -41,8 +41,8 @@ export function useTransferToken(tokenId: string, displayName: string) {
       transactions.markComplete(txId, txHash);
       toast.update(toastId, 'success', `Successfully transferred ${amount} ${displayName}.`);
 
-      // Refresh balances after successful transfer
-      await tokenStore.fetchBalances();
+      // Refresh balances in background - don't let failure affect the tx status
+      tokenStore.fetchBalances().catch(() => {});
     } catch (err) {
       transactions.markFailed(txId, err);
       toast.update(toastId, 'error', parseError(err));

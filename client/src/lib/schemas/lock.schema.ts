@@ -1,10 +1,8 @@
 import { z } from 'zod';
+import { positiveNumberString } from './shared';
 
 export const lockSchema = z.object({
-  amount: z
-    .string()
-    .min(1, 'Amount is required')
-    .refine((val) => !isNaN(Number(val)) && Number(val) > 0, 'Must be a positive number'),
+  amount: positiveNumberString,
 });
 
 export type LockFormData = z.infer<typeof lockSchema>;

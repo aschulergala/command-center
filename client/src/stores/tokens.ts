@@ -3,6 +3,7 @@ import { ref, computed } from 'vue';
 import { useSdkStore } from './sdk';
 import { useWalletStore } from './wallet';
 import { parseError } from '@/lib/errors';
+import { GALA_TOKEN_ID } from '@/lib/constants';
 
 export interface TokenBalance {
   tokenId: string;
@@ -28,10 +29,18 @@ export const useTokenStore = defineStore('tokens', () => {
     switch (sortBy.value) {
       case 'name':
         return list.sort((a, b) => a.displayName.localeCompare(b.displayName));
-      case 'balance-high':
-        return list.sort((a, b) => Number(b.quantity) - Number(a.quantity));
-      case 'balance-low':
-        return list.sort((a, b) => Number(a.quantity) - Number(b.quantity));
+      case 'balance-high': {
+        return list.sort((a, b) => {
+          const diff = parseFloat(b.quantity) - parseFloat(a.quantity);
+          return diff > 0 ? 1 : diff < 0 ? -1 : 0;
+        });
+      }
+      case 'balance-low': {
+        return list.sort((a, b) => {
+          const diff = parseFloat(a.quantity) - parseFloat(b.quantity);
+          return diff > 0 ? 1 : diff < 0 ? -1 : 0;
+        });
+      }
       default:
         return list;
     }
@@ -48,6 +57,13 @@ export const useTokenStore = defineStore('tokens', () => {
       return;
     }
 
+    // Validate that galaAddress has the expected eth| prefix before using it
+    if (!walletStore.galaAddress.startsWith('eth|')) {
+      balances.value = [];
+      galaBalance.value = '0';
+      return;
+    }
+
     isLoading.value = true;
     error.value = null;
 
@@ -58,7 +74,7 @@ export const useTokenStore = defineStore('tokens', () => {
 
       // Build the GALA entry
       const galaEntry: TokenBalance = {
-        tokenId: 'GALA|Unit|none|none',
+        tokenId: GALA_TOKEN_ID,
         collection: 'GALA',
         category: 'Unit',
         quantity: galaResult?.quantity ?? '0',
@@ -68,6 +84,7 @@ export const useTokenStore = defineStore('tokens', () => {
       };
 
       // Fetch user's token list from launchpad API
+      // galaAddress is validated to start with 'eth|' above
       const tokensResult = await sdk.fetchTokensHeld({
         address: walletStore.galaAddress as `eth|${string}`,
         pageSize: 100,

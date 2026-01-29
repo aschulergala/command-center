@@ -4,23 +4,9 @@ import { useTransactionStore } from '@/stores/transactions';
 import { useCreatorStore } from '@/stores/creators';
 import { useToast } from '@/composables/useToast';
 import { parseError } from '@/lib/errors';
+import type { MintNftParams, EstimateMintFeeParams } from '@/types/mint';
 
-export interface MintNftParams {
-  collection: string;
-  type: string;
-  category: string;
-  quantity: string;
-  ownerAddress: string;
-  additionalKey?: string;
-}
-
-export interface EstimateMintFeeParams {
-  collection: string;
-  type: string;
-  category: string;
-  quantity: string;
-  ownerAddress: string;
-}
+export type { MintNftParams, EstimateMintFeeParams };
 
 export function useCollectionMint() {
   const isMinting = ref(false);
@@ -33,20 +19,23 @@ export function useCollectionMint() {
   const toast = useToast();
 
   async function estimateFee(params: EstimateMintFeeParams) {
+    if (isEstimating.value) return;
     const sdk = sdkStore.requireSdk();
     isEstimating.value = true;
 
     try {
       const fee = await sdk.estimateNftMintFee(params);
       mintFee.value = fee;
-    } catch {
+    } catch (err) {
       mintFee.value = '';
+      toast.error(parseError(err));
     } finally {
       isEstimating.value = false;
     }
   }
 
   async function mint(params: MintNftParams) {
+    if (isMinting.value) return;
     const sdk = sdkStore.requireSdk();
     isMinting.value = true;
 
@@ -63,9 +52,9 @@ export function useCollectionMint() {
         `Successfully minted ${result.mintedQuantity} NFTs.`,
       );
 
-      // Refresh token classes to update supply counts
+      // Refresh token classes in background - don't let failure affect the tx status
       if (creatorStore.selectedCollection) {
-        await creatorStore.fetchTokenClasses(creatorStore.selectedCollection.collection);
+        creatorStore.fetchTokenClasses(creatorStore.selectedCollection.collection).catch(() => {});
       }
     } catch (err) {
       transactions.markFailed(txId, err);

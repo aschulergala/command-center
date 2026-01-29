@@ -12,7 +12,7 @@ const sizeClasses = {
 </script>
 
 <template>
-  <div class="flex items-center justify-center gap-2">
+  <div role="status" aria-label="Loading" class="flex items-center justify-center gap-2">
     <div
       class="animate-spin rounded-full border-surface-600 border-t-gala-500"
       :class="sizeClasses[size ?? 'md']"

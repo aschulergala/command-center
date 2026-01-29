@@ -29,6 +29,7 @@ export function useCreateTokenClass() {
   const toast = useToast();
 
   async function create(params: CreateTokenClassParams) {
+    if (isCreating.value) return;
     const sdk = sdkStore.requireSdk();
     isCreating.value = true;
 
@@ -42,9 +43,9 @@ export function useCreateTokenClass() {
       transactions.markComplete(txId, result.transactionId);
       toast.update(toastId, 'success', `Successfully created token class "${label}".`);
 
-      // Refresh token classes for the current collection
+      // Refresh token classes in background - don't let failure affect the tx status
       if (creatorStore.selectedCollection) {
-        await creatorStore.fetchTokenClasses(creatorStore.selectedCollection.collection);
+        creatorStore.fetchTokenClasses(creatorStore.selectedCollection.collection).catch(() => {});
       }
     } catch (err) {
       transactions.markFailed(txId, err);

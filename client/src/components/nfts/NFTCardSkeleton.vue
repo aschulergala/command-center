@@ -24,7 +24,7 @@
 
     <!-- Buttons skeleton -->
     <div class="mt-4 flex gap-2 border-t border-surface-800 pt-3">
-      <div class="h-8 w-18 rounded-lg bg-surface-800" />
+      <div class="h-8 w-[4.5rem] rounded-lg bg-surface-800" />
       <div class="h-8 w-12 rounded-lg bg-surface-800" />
     </div>
   </div>

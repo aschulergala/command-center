@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { addressSchema, positiveIntegerString } from './shared';
 
 export const nftMintSchema = z.object({
   collection: z
@@ -10,16 +11,8 @@ export const nftMintSchema = z.object({
   category: z
     .string()
     .min(1, 'Category is required'),
-  quantity: z
-    .string()
-    .min(1, 'Quantity is required')
-    .refine(
-      (val) => !isNaN(Number(val)) && Number(val) > 0 && Number.isInteger(Number(val)),
-      'Must be a positive whole number',
-    ),
-  ownerAddress: z
-    .string()
-    .min(1, 'Owner address is required'),
+  quantity: positiveIntegerString,
+  ownerAddress: addressSchema,
 });
 
 export type NftMintFormData = z.infer<typeof nftMintSchema>;

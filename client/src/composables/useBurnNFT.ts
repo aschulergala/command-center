@@ -4,11 +4,8 @@ import { useTransactionStore } from '@/stores/transactions';
 import { useNftStore } from '@/stores/nfts';
 import { useToast } from '@/composables/useToast';
 import { parseError } from '@/lib/errors';
+import { buildTokenName } from '@/lib/nft-utils';
 import type { NftBalance } from '@/stores/nfts';
-
-function buildTokenName(nft: NftBalance): string {
-  return `${nft.collection}|${nft.category}|${nft.type}|${nft.additionalKey}`;
-}
 
 export function useBurnNFT(nft: NftBalance) {
   const isBurning = ref(false);
@@ -21,6 +18,7 @@ export function useBurnNFT(nft: NftBalance) {
   const displayName = `${nft.collection} ${nft.type}`;
 
   async function burn(instanceId: string) {
+    if (isBurning.value) return;
     const sdk = sdkStore.requireSdk();
     isBurning.value = true;
 
@@ -35,8 +33,8 @@ export function useBurnNFT(nft: NftBalance) {
       transactions.markComplete(txId);
       toast.update(toastId, 'success', `Successfully burned ${displayName} #${instanceId}.`);
 
-      // Refresh NFT balances after successful burn
-      await nftStore.fetchBalances();
+      // Refresh NFT balances in background - don't let failure affect the tx status
+      nftStore.fetchBalances().catch(() => {});
     } catch (err) {
       transactions.markFailed(txId, err);
       toast.update(toastId, 'error', parseError(err));

@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
+import { ref } from 'vue';
 import { useCreatorStore, type NftTokenClassWithSupply } from '@/stores/creators';
 import { useWalletStore } from '@/stores/wallet';
+import { useWalletEffect } from '@/composables/useWalletEffect';
 import PageHeader from '@/components/ui/PageHeader.vue';
 import ErrorDisplay from '@/components/ui/ErrorDisplay.vue';
 import CollectionList from '@/components/creators/CollectionList.vue';
@@ -12,6 +13,11 @@ import CollectionMintModal from '@/components/creators/CollectionMintModal.vue';
 
 const creatorStore = useCreatorStore();
 const walletStore = useWalletStore();
+
+useWalletEffect(
+  () => creatorStore.fetchCollections(),
+  () => creatorStore.reset(),
+);
 
 // Modal state
 type ModalType = 'createCollection' | 'createClass' | 'mint' | null;
@@ -36,23 +42,6 @@ function closeModal() {
   selectedMintClass.value = null;
 }
 
-// Fetch collections when wallet connects
-onMounted(() => {
-  if (walletStore.isConnected) {
-    creatorStore.fetchCollections();
-  }
-});
-
-watch(
-  () => walletStore.isConnected,
-  (connected) => {
-    if (connected) {
-      creatorStore.fetchCollections();
-    } else {
-      creatorStore.reset();
-    }
-  },
-);
 </script>
 
 <template>

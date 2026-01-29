@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
+import { ref } from 'vue';
 import { useTokenStore, type TokenBalance } from '@/stores/tokens';
-import { useWalletStore } from '@/stores/wallet';
+import { useWalletEffect } from '@/composables/useWalletEffect';
 import PageHeader from '@/components/ui/PageHeader.vue';
 import ErrorDisplay from '@/components/ui/ErrorDisplay.vue';
 import TokenList from '@/components/tokens/TokenList.vue';
@@ -12,7 +12,11 @@ import LockModal from '@/components/tokens/LockModal.vue';
 import UnlockModal from '@/components/tokens/UnlockModal.vue';
 
 const tokenStore = useTokenStore();
-const walletStore = useWalletStore();
+
+useWalletEffect(
+  () => tokenStore.fetchBalances(),
+  () => tokenStore.reset(),
+);
 
 // Modal state
 type ModalType = 'transfer' | 'burn' | 'lock' | 'unlock' | null;
@@ -29,20 +33,6 @@ function closeModal() {
   selectedToken.value = null;
 }
 
-// Fetch balances when wallet connects
-onMounted(() => {
-  if (walletStore.isConnected) {
-    tokenStore.fetchBalances();
-  }
-});
-
-watch(() => walletStore.isConnected, (connected) => {
-  if (connected) {
-    tokenStore.fetchBalances();
-  } else {
-    tokenStore.reset();
-  }
-});
 </script>
 
 <template>

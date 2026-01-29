@@ -12,7 +12,7 @@ const emit = defineEmits<{
 <template>
   <div
     v-if="collections.length > 0"
-    class="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 scrollbar-thin scrollbar-thumb-surface-700 scrollbar-track-transparent sm:mx-0 sm:flex-wrap sm:px-0"
+    class="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0"
   >
     <!-- All collections button -->
     <button

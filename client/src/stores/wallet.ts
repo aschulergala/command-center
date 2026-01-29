@@ -21,6 +21,10 @@ export const useWalletStore = defineStore('wallet', () => {
   const isDetecting = ref(false);
   const error = ref<string | null>(null);
 
+  // Track the raw EIP-1193 provider and listener for cleanup
+  let rawProvider: DetectedWallet['provider'] | null = null;
+  let accountsChangedListener: ((...args: unknown[]) => void) | null = null;
+
   const isConnected = computed(() => address.value !== null);
   const shortAddress = computed(() => {
     if (!address.value) return null;
@@ -62,7 +66,14 @@ export const useWalletStore = defineStore('wallet', () => {
 
       // Listen for account changes
       if (typeof wallet.provider.on === 'function') {
-        wallet.provider.on('accountsChanged', handleAccountsChanged as (...args: unknown[]) => void);
+        // Wrap the typed handler to match the EIP-1193 event signature
+        const listener = (...args: unknown[]) => {
+          const accounts = args[0];
+          handleAccountsChanged(Array.isArray(accounts) ? accounts as string[] : []);
+        };
+        accountsChangedListener = listener;
+        rawProvider = wallet.provider;
+        wallet.provider.on('accountsChanged', listener);
       }
     } catch (err) {
       error.value = parseError(err);
@@ -72,15 +83,36 @@ export const useWalletStore = defineStore('wallet', () => {
     }
   }
 
-  function handleAccountsChanged(accounts: string[]) {
-    if (accounts.length === 0) {
+  async function handleAccountsChanged(accounts: string[]) {
+    if (!Array.isArray(accounts) || accounts.length === 0) {
       disconnect();
     } else {
       address.value = accounts[0];
+
+      // Refresh the GalaChain address for the new account
+      if (walletProvider.value) {
+        try {
+          galaAddress.value = await walletProvider.value.getGalaAddress();
+        } catch {
+          // If we cannot resolve the new gala address, disconnect
+          disconnect();
+        }
+      }
     }
   }
 
   async function disconnect() {
+    // Remove the accountsChanged listener before disconnecting
+    if (rawProvider && accountsChangedListener && typeof rawProvider.removeListener === 'function') {
+      try {
+        rawProvider.removeListener('accountsChanged', accountsChangedListener);
+      } catch {
+        // ignore cleanup errors
+      }
+    }
+    rawProvider = null;
+    accountsChangedListener = null;
+
     if (walletProvider.value) {
       try {
         await walletProvider.value.disconnect();

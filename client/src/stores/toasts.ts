@@ -14,19 +14,26 @@ let nextId = 0;
 
 export const useToastStore = defineStore('toasts', () => {
   const toasts = ref<Toast[]>([]);
+  const timers = new Map<number, ReturnType<typeof setTimeout>>();
 
   function add(type: ToastType, message: string, duration = 5000): number {
     const id = nextId++;
     toasts.value.push({ id, type, message, duration });
 
     if (type !== 'pending') {
-      setTimeout(() => remove(id), duration);
+      const handle = setTimeout(() => remove(id), duration);
+      timers.set(id, handle);
     }
 
     return id;
   }
 
   function remove(id: number) {
+    const handle = timers.get(id);
+    if (handle !== undefined) {
+      clearTimeout(handle);
+      timers.delete(id);
+    }
     toasts.value = toasts.value.filter((t) => t.id !== id);
   }
 
@@ -51,8 +58,17 @@ export const useToastStore = defineStore('toasts', () => {
     if (toast) {
       toast.type = type;
       toast.message = message;
+
+      // Clear any existing timer before scheduling a new one
+      const existingHandle = timers.get(id);
+      if (existingHandle !== undefined) {
+        clearTimeout(existingHandle);
+        timers.delete(id);
+      }
+
       if (type !== 'pending') {
-        setTimeout(() => remove(id), 5000);
+        const handle = setTimeout(() => remove(id), 5000);
+        timers.set(id, handle);
       }
     }
   }

@@ -16,6 +16,7 @@ export function useClaimCollection() {
   const toast = useToast();
 
   async function checkAvailability(name: string) {
+    if (isChecking.value) return;
     if (!name || name.length < 3) {
       isAvailable.value = null;
       return;
@@ -35,6 +36,7 @@ export function useClaimCollection() {
   }
 
   async function claim(collectionName: string) {
+    if (isClaiming.value) return;
     const sdk = sdkStore.requireSdk();
     isClaiming.value = true;
 
@@ -47,8 +49,8 @@ export function useClaimCollection() {
       transactions.markComplete(txId, result.transactionId);
       toast.update(toastId, 'success', `Successfully claimed collection "${collectionName}".`);
 
-      // Refresh collections after successful claim
-      await creatorStore.fetchCollections();
+      // Refresh collections in background - don't let failure affect the tx status
+      creatorStore.fetchCollections().catch(() => {});
     } catch (err) {
       transactions.markFailed(txId, err);
       toast.update(toastId, 'error', parseError(err));

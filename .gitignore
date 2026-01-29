@@ -2,7 +2,7 @@ node_modules/
 dist/
 .env
 *.js.map
-*.d.ts
+dist/**/*.d.ts
 
 # IDE
 .idea/
